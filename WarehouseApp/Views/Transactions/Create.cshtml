@@ -1,0 +1,40 @@
+﻿@model WarehouseApp.Models.Transaction
+
+<form asp-action="Create" method="post">
+
+    <div class="mb-3">
+        <label asp-for="ProductId"></label>
+        <select asp-for="ProductId"
+                asp-items="ViewBag.ProductId"
+                class="form-select">
+            <option value="">-- Select product --</option>
+        </select>
+        <span asp-validation-for="ProductId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="TransactionType"></label>
+        <select asp-for="TransactionType" class="form-select">
+            <option value="IN">IN</option>
+            <option value="OUT">OUT</option>
+        </select>
+        <span asp-validation-for="TransactionType" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Quantity"></label>
+        <input asp-for="Quantity" type="number" class="form-control" min="1" />
+        <span asp-validation-for="Quantity" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Comment"></label>
+        <input asp-for="Comment" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,88 @@
+﻿@{
+    ViewData["Title"] = "Reports";
+    var reportType = ViewBag.ReportType as string;
+}
+
+
+<h2>Reports</h2>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-3">
+        <select name="reportType" class="form-select">
+            <select name="reportType" class="form-select">
+                @* Використовуємо Razor всередині тегу, без tag helper *@
+                @if (ViewBag.ReportType == "Stock")
+                {
+                    <option value="Stock" selected>Stock</option>
+                }
+                else
+                {
+                    <option value="Stock">Stock</option>
+                }
+
+                @if (ViewBag.ReportType == "Incoming")
+                {
+                    <option value="Incoming" selected>Incoming</option>
+                }
+                else
+                {
+                    <option value="Incoming">Incoming</option>
+                }
+
+                @if (ViewBag.ReportType == "Outgoing")
+                {
+                    <option value="Outgoing" selected>Outgoing</option>
+                }
+                else
+                {
+                    <option value="Outgoing">Outgoing</option>
+                }
+            </select>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <input type="date" name="fromDate" class="form-control" value="@ViewBag.FromDate" />
+    </div>
+    <div class="col-md-2">
+        <input type="date" name="toDate" class="form-control" value="@ViewBag.ToDate" />
+    </div>
+    <div class="col-md-3">
+        <select name="categoryId" class="form-select">
+            <option value="">All Categories</option>
+            @foreach (var cat in ViewBag.Categories)
+            {
+                if (ViewBag.SelectedCategory == cat.CategoryId)
+                {
+                    <option value="@cat.CategoryId" selected>@cat.Name</option>
+                }
+                else
+                {
+                    <option value="@cat.CategoryId">@cat.Name</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Filter</button>
+    </div>
+</form>
+
+@if (!string.IsNullOrEmpty(reportType))
+{
+    <div>
+        @if (reportType == "Stock")
+        {
+            @Html.Partial("StockReport", (IEnumerable<WarehouseApp.Models.Product>)Model)
+        }
+        else if (reportType == "Incoming")
+        {
+            @Html.Partial("IncomingReport", (IEnumerable<WarehouseApp.Models.Transaction>)Model)
+        }
+        else if (reportType == "Outgoing")
+        {
+            @Html.Partial("OutgoingReport", (IEnumerable<WarehouseApp.Models.Transaction>)Model)
+        }
+
+    </div>
+}

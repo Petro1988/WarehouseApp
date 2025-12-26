@@ -1,0 +1,36 @@
+﻿@model WarehouseApp.Models.Product
+@{
+    ViewData["Title"] = "Edit Product";
+}
+
+<h2><i class="bi bi-pencil-square"></i> Edit Product</h2>
+
+<form asp-action="Edit" method="post" class="card p-4 shadow-sm">
+    <input type="hidden" asp-for="ProductId" />
+
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Category</label>
+        <select asp-for="CategoryId" asp-items="ViewBag.CategoryId" class="form-select"></select>
+        <span asp-validation-for="CategoryId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Minimum Stock</label>
+        <input asp-for="MinimumStock" class="form-control" type="number" min="0" />
+        <span asp-validation-for="MinimumStock" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Current Quantity</label>
+        <input asp-for="Quantity" class="form-control" readonly />
+    </div>
+
+    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Update</button>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+</form>

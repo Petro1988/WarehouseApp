@@ -1,0 +1,39 @@
+﻿@model IEnumerable<WarehouseApp.Models.Transaction>
+
+<table class="table table-striped mt-2">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Quantity</th>
+            <th>Type</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var t in Model)
+            {
+                <tr>
+                    <td>@t.Date.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@t.Product?.Name</td>
+                    <td>@t.Product?.Category?.Name</td>
+                    <td>@t.Quantity</td>
+                    <td>
+                        <span class="@(t.TransactionType == "IN" ? "text-success" : "text-danger")">
+                            @t.TransactionType
+                        </span>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="5" class="text-center text-muted">No transactions found.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+

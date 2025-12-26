@@ -1,0 +1,14 @@
+﻿@model WarehouseApp.Models.User
+@{
+    ViewData["Title"] = "Delete User";
+}
+
+<h2>🗑 Delete User</h2>
+<p>Are you sure you want to delete user <strong>@Model.Username</strong>?</p>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="UserId" />
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
