@@ -1,43 +1,69 @@
 ﻿@model WarehouseApp.Models.Product
+
 @{
     ViewData["Title"] = "Add Product";
 }
 
 <div class="container mt-4" style="max-width: 600px;">
     <div class="card shadow-sm">
+
+        <!-- 🔹 HEADER -->
         <div class="card-header bg-primary text-white">
-            <i class="bi bi-plus-circle"></i> Add Product
+            <h5 class="mb-0">
+                <i class="bi bi-plus-circle"></i> Artikel hinzufügen
+            </h5>
         </div>
+
+        <!-- 🔹 BODY -->
         <div class="card-body">
-            <form asp-action="Create" method="post">
+            <form asp-action="Create" method="post" autocomplete="off">
                 @Html.AntiForgeryToken()
 
+                <!-- 🏷 Name -->
                 <div class="mb-3">
-                    <label asp-for="Name" class="form-label"></label>
-                    <input asp-for="Name" class="form-control" placeholder="Enter product name" />
+                    <label asp-for="Name" class="form-label fw-semibold"></label>
+                    <input asp-for="Name"
+                           class="form-control"
+                           placeholder="Artikelname eingeben" />
                     <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
 
+                <!-- 📂 Category -->
                 <div class="mb-3">
-                    <label asp-for="CategoryId" class="form-label">Category</label>
-                    <select asp-for="CategoryId" asp-items="ViewBag.CategoryId" class="form-select">
-                        <option value="">-- Select Category --</option>
+                    <label asp-for="CategoryId" class="form-label fw-semibold">Kategorie</label>
+                    <select asp-for="CategoryId"
+                            asp-items="ViewBag.CategoryId"
+                            class="form-select">
+                        <option value="">-- Kategorie auswählen --</option>
                     </select>
                     <span asp-validation-for="CategoryId" class="text-danger"></span>
                 </div>
 
-                <div class="mb-3">
-                    <label asp-for="MinimumStock" class="form-label">Minimum Stock</label>
-                    <input asp-for="MinimumStock" type="number" class="form-control" placeholder="Enter minimum stock" />
+                <!-- 📉 Minimum stock -->
+                <div class="mb-4">
+                    <label asp-for="MinimumStock" class="form-label fw-semibold">
+                        Mindestbestand
+                    </label>
+                    <input asp-for="MinimumStock"
+                           type="number"
+                           min="0"
+                           value="0"
+                           class="form-control"
+                           placeholder="0 = no limit" />
+                    <div class="form-text">
+                        Dient zur Kennzeichnung von Artikeln mit niedrigem Bestand.
+                    </div>
                     <span asp-validation-for="MinimumStock" class="text-danger"></span>
                 </div>
 
+                <!-- 🔘 ACTIONS -->
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-check-circle"></i> Save
+                        <i class="bi bi-check-circle"></i> Speichern
                     </button>
-                    <a asp-action="Index" class="btn btn-secondary w-100">
-                        <i class="bi bi-arrow-left"></i> Cancel
+
+                    <a asp-action="Index" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-left"></i> Abbrechen
                     </a>
                 </div>
             </form>

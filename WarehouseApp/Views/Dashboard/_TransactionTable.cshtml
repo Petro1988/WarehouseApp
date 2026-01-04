@@ -1,13 +1,13 @@
 ﻿@model IEnumerable<WarehouseApp.Models.Transaction>
 
-<table class="table table-striped mt-2">
-    <thead>
+<table class="table table-striped table-hover mb-0 align-middle">
+    <thead class="table-light">
         <tr>
-            <th>Date</th>
-            <th>Product</th>
-            <th>Category</th>
-            <th>Quantity</th>
-            <th>Type</th>
+            <th>Datum</th>
+            <th>Artikel</th>
+            <th>Kategorie</th>
+            <th class="text-end">Menge</th>
+            <th class="text-center">Art</th>
         </tr>
     </thead>
     <tbody>
@@ -19,9 +19,9 @@
                     <td>@t.Date.ToString("yyyy-MM-dd HH:mm")</td>
                     <td>@t.Product?.Name</td>
                     <td>@t.Product?.Category?.Name</td>
-                    <td>@t.Quantity</td>
-                    <td>
-                        <span class="@(t.TransactionType == "IN" ? "text-success" : "text-danger")">
+                    <td class="text-end">@t.Quantity</td>
+                    <td class="text-center">
+                        <span class="badge @(t.TransactionType == "IN" ? "bg-success" : "bg-danger")">
                             @t.TransactionType
                         </span>
                     </td>
@@ -31,9 +31,10 @@
         else
         {
             <tr>
-                <td colspan="5" class="text-center text-muted">No transactions found.</td>
+                <td colspan="5" class="text-center text-muted py-4">
+                    <i class="bi bi-info-circle"></i> Keine Buchungen gefunden
+                </td>
             </tr>
         }
     </tbody>
 </table>
-

@@ -1,93 +1,136 @@
-﻿@model IEnumerable<WarehouseApp.Models.Transaction>
-@{
-    ViewData["Title"] = "Stock Report";
-}
+﻿@model IEnumerable<WarehouseApp.Models.Product>
 
-<h2 class="mb-4">Stock Report</h2>
 
-<form method="get" class="row g-2 mb-3">
+<!-- 🔍 FILTERS -->
+<form method="get" class="card shadow-sm p-3 mb-4">
+    <div class="row g-3 align-items-end">
 
-    <!-- DATE -->
-    <div class="col-md-2">
-        <input type="date" name="date" class="form-control" value="@ViewBag.Date" />
-    </div>
+        <!-- Date -->
+        <div class="col-md-2">
+            <label class="form-label">Datum</label>
+            <input type="date"
+                   name="date"
+                   class="form-control"
+                   value="@ViewBag.Date" />
+        </div>
 
-    <!-- CATEGORY -->
-    <div class="col-md-3">
-        <select name="categoryId" class="form-select">
-            <option value="">All Categories</option>
-
-            @foreach (var cat in ViewBag.Categories)
-            {
-                if (ViewBag.SelectedCategory != null && ViewBag.SelectedCategory == cat.CategoryId)
+        <!-- Category -->
+        <div class="col-md-3">
+            <label class="form-label">Kategorie</label>
+            <select name="categoryId" class="form-select">
+                <option value="">Alle Kategorien</option>
+                @foreach (var cat in ViewBag.Categories)
                 {
-                    <option value="@cat.CategoryId" selected>@cat.Name</option>
+                    <option value="@cat.CategoryId"
+                            selected="@(ViewBag.SelectedCategory == cat.CategoryId)">
+                        @cat.Name
+                    </option>
                 }
-                else
+            </select>
+        </div>
+
+        <!-- Product -->
+        <div class="col-md-3">
+            <label class="form-label">Artikel</label>
+            <select name="productId" class="form-select">
+                <option value="">Alle Artikel</option>
+                @foreach (var p in ViewBag.Products)
                 {
-                    <option value="@cat.CategoryId">@cat.Name</option>
+                    <option value="@p.ProductId"
+                            selected="@(ViewBag.SelectedProduct == p.ProductId)">
+                        @p.Name
+                    </option>
                 }
-            }
-        </select>
+            </select>
+        </div>
+
+        <!-- Apply -->
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-funnel"></i> Anwenden
+            </button>
+        </div>
+
+        <div class="col-md-2">
+            <a asp-action="StockReport"
+               class="btn btn-outline-secondary w-100">
+                <i class="bi bi-x-circle"></i> Zurücksetzen
+            </a>
+        </div>
+
+
+        <!-- Export -->
+        <div class="col-md-12">
+            <button name="export"
+                    value="true"
+                    class="btn btn-success w-100">
+                <i class="bi bi-file-earmark-excel"></i> Nach Excel exportieren
+            </button>
+        </div>
+
     </div>
-
-    <!-- PRODUCT -->
-    <div class="col-md-3">
-        <select name="productId" class="form-select">
-            <option value="">All Products</option>
-
-            @foreach (var p in ViewBag.Products)
-            {
-                if (ViewBag.SelectedProduct != null && ViewBag.SelectedProduct == p.ProductId)
-                {
-                    <option value="@p.ProductId" selected>@p.Name</option>
-                }
-                else
-                {
-                    <option value="@p.ProductId">@p.Name</option>
-                }
-            }
-        </select>
-    </div>
-
-    <!-- SEARCH -->
-    <div class="col-md-2">
-        <input type="text" name="search" class="form-control" placeholder="Search comment..." value="@ViewBag.Search" />
-    </div>
-
-    <div class="col-md-2">
-        <button type="submit" class="btn btn-primary w-100">Apply</button>
-    </div>
-
-    <div class="col-md-12 mt-2">
-        <button name="export" value="true" class="btn btn-success w-100">
-            <i class="bi bi-file-earmark-excel"></i> Export to Excel
-        </button>
-    </div>
-
 </form>
 
+<!-- 📋 TABLE -->
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Artikel</th>
+                    <th>Kategorie</th>
+                    <th class="text-center">Menge</th>
+                    <th class="text-center">Mindestbestand/th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    foreach (var p in Model)
+                    {
+                        bool isLow = p.MinimumStock > 0 && p.Quantity < p.MinimumStock;
 
-<table class="table table-striped table-hover">
-    <thead class="table-light">
-        <tr>
-            <th>Date</th>
-            <th>Product</th>
-            <th>Category</th>
-            <th>Quantity</th>
-            <th>Comment</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var t in Model)
-        {
-            <tr>
-                <td>@t.Date.ToString("yyyy-MM-dd HH:mm")</td>
-                <td>@t.Product?.Name</td>
-                <td>@t.Product?.Category?.Name</td>
-                <td>@t.Quantity</td>
-                <td>@t.Comment</td>
-            </tr>
-        }
-    </tbody>
-</table>
+                        <tr class="@(isLow ? "table-warning" : "")">
+                            <td>@p.Name</td>
+                            <td>@p.Category?.Name</td>
+
+                            <td class="text-center fw-bold">
+                                @if (p.Quantity > 0)
+                                {
+                                    <span class="text-success">@p.Quantity</span>
+                                }
+                                else
+                                {
+                                    <span class="text-danger">0</span>
+                                }
+                            </td>
+
+                            <td class="text-center">
+                                @if (p.MinimumStock == 0)
+                                {
+                                    <span class="badge bg-secondary">Kein Mindestbestand</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-dark">@p.MinimumStock</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            Keine Lagerdaten vorhanden
+                        </td>
+                    </tr>
+                }
+            </tbody>
+
+        </table>
+
+
+    </div>
+</div>
+

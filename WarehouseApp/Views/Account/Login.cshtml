@@ -2,25 +2,47 @@
     ViewData["Title"] = "Login";
 }
 
-<h2>🔐 Login</h2>
+<div class="container mt-5" style="max-width: 420px;">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white text-center">
+            <i class="bi bi-shield-lock-fill"></i> Anmelden
+        </div>
 
-@if (ViewBag.Error != null)
-{
-    <div class="alert alert-danger">@ViewBag.Error</div>
-}
+        <div class="card-body">
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> @ViewBag.Error
+                </div>
+            }
 
-<form asp-action="Login" method="post" class="mt-3">
-    <div class="mb-3">
-        <label for="username" class="form-label">Username</label>
-        <input type="text" name="username" id="username" class="form-control" required />
+            <form asp-action="Login" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label for="username" class="form-label">Benutzername</label>
+                    <input type="text"
+                           name="username"
+                           id="username"
+                           class="form-control"
+                           placeholder="Benutzername eingeben"
+                           required />
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Passwort</label>
+                    <input type="password"
+                           name="password"
+                           id="password"
+                           class="form-control"
+                           placeholder="Passwort eingeben"
+                           required />
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-box-arrow-in-right"></i> Anmelden
+                </button>
+            </form>
+        </div>
     </div>
-
-    <div class="mb-3">
-        <label for="password" class="form-label">Password</label>
-        <input type="password" name="password" id="password" class="form-control" required />
-    </div>
-
-    <button type="submit" class="btn btn-primary w-100">Login</button>
-</form>
-
-
+</div>

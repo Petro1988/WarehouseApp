@@ -98,57 +98,6 @@ namespace WarehouseApp.Controllers
             return View(product);
         }
 
-        /*// POST: /Products/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Product product)
-        {
-            
-            if (!ModelState.IsValid)
-            {
-                ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "Name", product.CategoryId);
-                return View(product);
-            }
-
-            // EF автоматично згенерує ProductId
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
-        }*/
-
-        /*[HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Create(Product product)
-        {
-            // Перевірка ModelState
-            if (!ModelState.IsValid)
-            {
-                // Дістаємо список усіх помилок
-                var allErrors = ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
-
-                // Показуємо в Debug Output
-                foreach (var error in allErrors)
-                {
-                    Console.WriteLine("MODEL ERROR: " + error);
-                }
-
-                // Повертаємо форму назад з даними
-                ViewBag.Categories = _context.Categories.ToList();
-                return View(product);
-            }
-
-            // Якщо все ок – зберігаємо
-            _context.Products.Add(product);
-            _context.SaveChanges();
-
-            return RedirectToAction(nameof(Index));
-        }*/
-
-
         // GET: /Products/Edit/5
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id)

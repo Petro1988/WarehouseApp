@@ -4,23 +4,34 @@
     ViewData["Title"] = "Add Category";
 }
 
-<div class="container mt-4">
-    <h2 class="mb-4">Add Category</h2>
-
-    <form asp-action="Create" method="post" class="shadow-sm p-4 bg-white rounded">
-        <div class="mb-3">
-            <label asp-for="Name" class="form-label"></label>
-            <input asp-for="Name" class="form-control" placeholder="Enter category name" />
-            <span asp-validation-for="Name" class="text-danger"></span>
+<div class="container mt-4" style="max-width: 500px;">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <i class="bi bi-plus-circle"></i> Kategorie hinzufügen
         </div>
 
-        <button type="submit" class="btn btn-success">
-            <i class="bi bi-check-circle"></i> Save
-        </button>
-        <a asp-action="Index" class="btn btn-secondary ms-2">
-            <i class="bi bi-arrow-left"></i> Back
-        </a>
-    </form>
+        <div class="card-body">
+            <form asp-action="Create" method="post">
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label"></label>
+                    <input asp-for="Name"
+                           class="form-control"
+                           placeholder="Kategoriename eingeben" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle"></i> Speichern
+                    </button>
+
+                    <a asp-action="Index" class="btn btn-secondary w-100">
+                        <i class="bi bi-arrow-left"></i> Abbrechen
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 @section Scripts {

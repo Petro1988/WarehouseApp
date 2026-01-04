@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WarehouseApp.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +23,16 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
+var culture = new CultureInfo("de-DE");
+
+var localizationOptions = new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture(culture),
+    SupportedCultures = new List<CultureInfo> { culture },
+    SupportedUICultures = new List<CultureInfo> { culture }
+};
+
+app.UseRequestLocalization(localizationOptions);
 // 🧩 Seed admin user
 using (var scope = app.Services.CreateScope())
 {

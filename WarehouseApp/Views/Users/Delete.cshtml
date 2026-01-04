@@ -1,14 +1,46 @@
 ﻿@model WarehouseApp.Models.User
+
 @{
     ViewData["Title"] = "Delete User";
 }
 
-<h2>🗑 Delete User</h2>
-<p>Are you sure you want to delete user <strong>@Model.Username</strong>?</p>
+<div class="container mt-4" style="max-width: 600px;">
+    <h2 class="mb-3 text-danger">
+        <i class="bi bi-exclamation-triangle"></i> Benutzer löschen
+    </h2>
 
-<form asp-action="Delete" method="post">
-    <input type="hidden" asp-for="UserId" />
-    <button type="submit" class="btn btn-danger">Delete</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-</form>
+    <div class="alert alert-warning shadow-sm">
+        <p class="mb-0">
+            Möchten Sie diesen Benutzer wirklich löschen?
+            <strong>@Model.Username</strong>
+        </p>
+    </div>
 
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Benutzer-ID</dt>
+                <dd class="col-sm-8">@Model.UserId</dd>
+
+                <dt class="col-sm-4">Benutzername</dt>
+                <dd class="col-sm-8">@Model.Username</dd>
+
+                <dt class="col-sm-4">Rolle</dt>
+                <dd class="col-sm-8">@Model.Role</dd>
+            </dl>
+        </div>
+    </div>
+
+    <form asp-action="Delete" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="UserId" />
+
+        <button type="submit" class="btn btn-danger me-2">
+            <i class="bi bi-trash"></i> Löschen
+        </button>
+
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Abbrechen
+        </a>
+    </form>
+</div>

@@ -96,7 +96,7 @@ namespace WarehouseApp.Controllers
                 {
                     if (transaction.Quantity > product.Quantity)
                     {
-                        ModelState.AddModelError("", "Not enough stock.");
+                        ModelState.AddModelError(nameof(transaction.Quantity), $"Only {product.Quantity} items available in stock.");
                         ViewData["ProductId"] = new SelectList(_context.Products, "ProductId", "Name", transaction.ProductId);
                         return View(transaction);
                     }

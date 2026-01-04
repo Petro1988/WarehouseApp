@@ -20,9 +20,21 @@ namespace WarehouseApp.Controllers
         }
 
         // GET: /Users
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? search)
         {
-            var users = await _context.Users.ToListAsync();
+            var query = _context.Users.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(u => u.Username.Contains(search));
+            }
+
+            var users = await query
+                .OrderBy(u => u.Username)
+                .ToListAsync();
+
+            ViewBag.Search = search;
+
             return View(users);
         }
 

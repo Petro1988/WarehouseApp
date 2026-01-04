@@ -4,214 +4,197 @@
     var categories = ViewBag.Categories as List<WarehouseApp.Models.Category>;
 }
 
-<h2>📦 Warehouse Dashboard</h2>
+<div class="container-fluid mt-4">
 
-<!-- 🔍 ФОРМА ФІЛЬТРА -->
-<form id="filterForm" method="get" class="row g-3 mt-3 mb-4">
-    <div class="col-md-3">
-        <label class="form-label">From date:</label>
-        <input type="date" name="fromDate" value="@ViewBag.FromDate" class="form-control" />
+    <!-- 🔹 HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            <i class="bi bi-speedometer2"></i> SVG-IT Lagerübersicht
+        </h2>
     </div>
 
-    <div class="col-md-3">
-        <label class="form-label">To date:</label>
-        <input type="date" name="toDate" value="@ViewBag.ToDate" class="form-control" />
+    <!-- 🔍 FILTER CARD -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <i class="bi bi-funnel"></i> Filter
+        </div>
+
+        <div class="card-body">
+            <form id="filterForm" method="get" class="row g-3">
+
+                <div class="col-md-3">
+                    <label class="form-label">Von Datum</label>
+                    <input type="date" name="fromDate" value="@ViewBag.FromDate" class="form-control" />
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Bis Datum</label>
+                    <input type="date" name="toDate" value="@ViewBag.ToDate" class="form-control" />
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Typ</label>
+                    <select name="type" class="form-select">
+                        <option value="">Alle</option>
+                        <option value="IN" selected="@(ViewBag.SelectedType == "IN")">Wareneingang</option>
+                        <option value="OUT" selected="@(ViewBag.SelectedType == "OUT")">Warenausgang</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Kategorie</label>
+                    <select name="categoryId" class="form-select">
+                        <option value="0">Alle</option>
+                        @foreach (var c in categories)
+                        {
+                            <option value="@c.CategoryId"
+                                    selected="@(ViewBag.SelectedCategory == c.CategoryId)">
+                                @c.Name
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <button type="button" id="resetBtn" class="btn btn-secondary w-100">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </button>
+                </div>
+
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button type="button" id="exportBtn" class="btn btn-success w-100">
+                        <i class="bi bi-file-earmark-excel"></i> Excel
+                    </button>
+                </div>
+
+            </form>
+        </div>
     </div>
 
-    <div class="col-md-2">
-        <label class="form-label">Type:</label>
-        <select name="type" class="form-select">
-            <option value="">All</option>
-            <option value="IN" selected="@(ViewBag.SelectedType == "IN")">Incoming</option>
-            <option value="OUT" selected="@(ViewBag.SelectedType == "OUT")">Outgoing</option>
-        </select>
+    <!-- 📊 CHARTS -->
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <i class="bi bi-graph-up"></i> Bewegungen im Zeitverlauf
+                </div>
+                <div class="card-body">
+                    <canvas id="transactionsChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <i class="bi bi-pie-chart"></i> Aktivität nach Kategorie
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="col-md-3">
-        <label class="form-label">Category:</label>
-        <select name="categoryId" class="form-select">
-            <option value="0">All</option>
-            @foreach (var c in categories)
-            {
-                <option value="@c.CategoryId" selected="@(ViewBag.SelectedCategory == c.CategoryId)">@c.Name</option>
-            }
-        </select>
+    <!-- 📋 TABLE -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <i class="bi bi-list-ul"></i> Buchungen
+        </div>
+        <div class="card-body p-0" id="results">
+            @await Html.PartialAsync("_TransactionTable",
+            (IEnumerable<WarehouseApp.Models.Transaction>)ViewBag.Transactions)
+        </div>
     </div>
 
-    <div class="col-md-1 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary w-100">Filter</button>
-    </div>
-
-    <div class="col-md-1 d-flex align-items-end">
-        <button type="button" id="resetBtn" class="btn btn-secondary w-100">Reset</button>
-    </div>
-
-    <div class="col-md-2 d-flex align-items-end">
-        <button type="button" id="exportBtn" class="btn btn-success w-100">Export to Excel</button>
-    </div>
-
-    <div class="col-md-2 d-flex align-items-end">
-        <button type="button" id="exportPdfBtn" class="btn btn-danger w-100">
-            Export PDF (with chart)
-        </button>
-    </div>
-
-</form>
-
-<!-- 📊 ГРАФІК 1 -->
-<div class="card p-3 mb-4 shadow-sm">
-    <h4>📈 Transactions Summary</h4>
-    <canvas id="transactionsChart" height="100"></canvas>
 </div>
 
-<!-- 📊 ГРАФІК 2 -->
-<div class="card p-3 mb-4 shadow-sm">
-    <h4>🥧 Activity by Category</h4>
-    <canvas id="categoryChart" height="100"></canvas>
-</div>
-
-<!-- 📋 ТАБЛИЦЯ -->
-<div id="results">
-    @await Html.PartialAsync("_TransactionTable", (IEnumerable<WarehouseApp.Models.Transaction>)ViewBag.Transactions)
-</div>
-
-<!-- ✅ JAVASCRIPT -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    let chart;
-    let categoryChart;
 
-    // 📅 Фільтр
-    document.getElementById("filterForm").addEventListener("submit", async function (e) {
-        e.preventDefault();
-        const form = e.target;
-        const params = new URLSearchParams(new FormData(form));
+@section Scripts {
+    <script>
+        let transactionsChart;
+        let categoryChart;
 
-        const response = await fetch(`/Dashboard/Filter?${params.toString()}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        const html = await response.text();
-        document.getElementById("results").innerHTML = html;
+        async function loadCharts() {
+            const params = new URLSearchParams(new FormData(document.getElementById("filterForm")));
 
-        await updateChart(params.toString());
-        await updateCategoryChart(params.toString());
-    });
+            // 📈 Transactions Over Time
+            const timeRes = await fetch('/Dashboard/GetChartData?' + params);
+            const timeData = await timeRes.json();
 
-    // 🔁 Reset
-    document.getElementById("resetBtn").addEventListener("click", async function () {
-        document.getElementById("filterForm").reset();
-        const response = await fetch(`/Dashboard/Filter`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        const html = await response.text();
-        document.getElementById("results").innerHTML = html;
+            const ctx1 = document.getElementById('transactionsChart').getContext('2d');
+            if (transactionsChart) transactionsChart.destroy();
 
-        await updateChart('');
-        await updateCategoryChart('');
-    });
-
-    // 📊 Графік 1 — транзакції
-    async function updateChart(params = '') {
-        const response = await fetch(`/Dashboard/GetChartData?${params}`);
-        const data = await response.json();
-        const ctx = document.getElementById('transactionsChart').getContext('2d');
-        if (chart) chart.destroy();
-
-        chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.labels,
-                datasets: [
-                    {
-                        label: 'Incoming',
-                        data: data.incoming,
-                        borderColor: 'green',
-                        fill: false,
-                        tension: 0.3
-                    },
-                    {
-                        label: 'Outgoing',
-                        data: data.outgoing,
-                        borderColor: 'red',
-                        fill: false,
-                        tension: 0.3
+            transactionsChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: timeData.labels,
+                    datasets: [
+                        {
+                            label: 'Incoming',
+                            data: timeData.incoming,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Outgoing',
+                            data: timeData.outgoing,
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: { beginAtZero: true }
                     }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'bottom' } },
-                scales: { y: { beginAtZero: true } }
-            }
+                }
+            });
+
+            // 🍩 Activity by Category
+            const catRes = await fetch('/Dashboard/GetCategoryChartData?' + params);
+            const catData = await catRes.json();
+
+            const ctx2 = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChart) categoryChart.destroy();
+
+            categoryChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: catData.labels,
+                    datasets: [{
+                        data: catData.values
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        }
+
+        // 🔄 initial load
+        document.addEventListener('DOMContentLoaded', loadCharts);
+
+        // 🔍 reload on filter submit
+        document.getElementById("filterForm").addEventListener("submit", function () {
+            setTimeout(loadCharts, 100);
         });
-    }
 
-    // 🥧 Графік 2 — по категоріях
-    async function updateCategoryChart(params = '') {
-        const response = await fetch(`/Dashboard/GetCategoryChartData?${params}`);
-        const data = await response.json();
-        const ctx = document.getElementById('categoryChart').getContext('2d');
-        if (categoryChart) categoryChart.destroy();
-
-        categoryChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: data.labels,
-                datasets: [{
-                    data: data.values,
-                    backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'bottom' } }
-            }
+        // 🔁 reset
+        document.getElementById("resetBtn").addEventListener("click", function () {
+            window.location = '/Dashboard';
         });
-    }
+    </script>
+}
 
-    // 💾 Export to Excel
+<script>
     document.getElementById("exportBtn").addEventListener("click", function () {
-        const form = document.getElementById("filterForm");
-        const params = new URLSearchParams(new FormData(form));
-        window.location.href = `/Dashboard/ExportToExcel?${params.toString()}`;
+        const params = new URLSearchParams(new FormData(document.getElementById("filterForm")));
+        window.location = '/Dashboard/ExportToExcel?' + params.toString();
     });
-
-        // 🧾 Export to PDF
-        document.getElementById("exportPdfBtn").addEventListener("click", async function () {
-        const form = document.getElementById("filterForm");
-        const params = new URLSearchParams(new FormData(form));
-
-        // Отримуємо зображення з графіка Chart.js
-        const chartCanvas = document.getElementById('transactionsChart');
-        const chartImage = chartCanvas.toDataURL('image/png');
-
-        // Відправляємо POST на сервер
-        const response = await fetch('/Dashboard/ExportToPdf', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                chartBase64: chartImage,
-                fromDate: form.fromDate.value,
-                toDate: form.toDate.value,
-                type: form.type.value,
-                categoryId: form.categoryId.value
-            })
-        });
-
-        // Отримуємо PDF
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'Warehouse_Report.pdf';
-        a.click();
-        window.URL.revokeObjectURL(url);
-    });
-
-
-    // 🧠 Ініціалізація графіків при завантаженні сторінки
-    updateChart();
-    updateCategoryChart();
 </script>
+

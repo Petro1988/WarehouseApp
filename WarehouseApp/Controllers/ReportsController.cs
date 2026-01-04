@@ -30,41 +30,71 @@ namespace WarehouseApp.Controllers
         // ======================================================
         // 1️⃣ STOCK REPORT (залишки на дату + фільтри + пошук)
         // ======================================================
-        public IActionResult StockReport(DateTime? date, int? categoryId, int? productId, string? search, bool export = false)
+        public async Task<IActionResult> StockReport(
+            int? categoryId,
+            int? productId,
+            bool export = false)
         {
-            if (!date.HasValue)
-                date = DateTime.Today;
-
-            // всі транзакції до вибраної дати
-            var query = _context.Transactions
-                .Include(t => t.Product)
-                .ThenInclude(p => p.Category)
-                .Where(t => t.Date <= date.Value)
+            var query = _context.Products
+                .Include(p => p.Category)
                 .AsQueryable();
 
             if (categoryId.HasValue)
-                query = query.Where(t => t.Product.CategoryId == categoryId.Value);
+                query = query.Where(p => p.CategoryId == categoryId.Value);
 
             if (productId.HasValue)
-                query = query.Where(t => t.ProductId == productId.Value);
+                query = query.Where(p => p.ProductId == productId.Value);
 
-            if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(t => t.Comment.Contains(search));
+            var list = await query
+                .OrderBy(p => p.Name)
+                .ToListAsync();
 
-            var list = query.ToList();
-
-            if (export)
-                return ExportStockToExcel(list, date.Value);
-
-            ViewBag.Categories = _context.Categories.ToList();
-            ViewBag.Products = _context.Products.ToList();
+            ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
+            ViewBag.Products = await _context.Products.OrderBy(p => p.Name).ToListAsync();
 
             ViewBag.SelectedCategory = categoryId;
             ViewBag.SelectedProduct = productId;
-            ViewBag.Search = search;
-            ViewBag.Date = date.Value.ToString("yyyy-MM-dd");
+            ViewBag.Date = DateTime.Today.ToString("yyyy-MM-dd");
+
+            if (export)
+                return ExportStockBalanceExcel(list);
 
             return View(list);
+        }
+
+
+        private FileResult ExportStockBalanceExcel(List<Product> data)
+        {
+            using var workbook = new XLWorkbook();
+            var ws = workbook.AddWorksheet("Stock Balance");
+
+            // Header
+            ws.Cell(1, 1).Value = "Artikel";
+            ws.Cell(1, 2).Value = "Kategorie";
+            ws.Cell(1, 3).Value = "Menge";
+            ws.Cell(1, 4).Value = "Mindesbestand";
+
+            int row = 2;
+
+            foreach (var p in data)
+            {
+                ws.Cell(row, 1).Value = p.Name;
+                ws.Cell(row, 2).Value = p.Category?.Name;
+                ws.Cell(row, 3).Value = p.Quantity;
+                ws.Cell(row, 4).Value = p.MinimumStock;
+                row++;
+            }
+
+            ws.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            return File(
+                stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"StockBalance_{DateTime.Now:yyyyMMdd}.xlsx"
+            );
         }
 
 
@@ -142,7 +172,7 @@ namespace WarehouseApp.Controllers
             ViewBag.Search = search;
 
             ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
-            ViewBag.Products = await _context.Products.OrderBy(p => p.Name).ToListAsync(); // <= Ось тут
+            ViewBag.Products = await _context.Products.OrderBy(p => p.Name).ToListAsync(); 
 
             if (export)
                 return ExportGenericExcel(list, "OutgoingReport");
@@ -162,11 +192,11 @@ namespace WarehouseApp.Controllers
             ws.Cell(1, 1).Value = "Stock Report on:";
             ws.Cell(1, 2).Value = date.ToString("yyyy-MM-dd");
 
-            ws.Cell(3, 1).Value = "Date";
-            ws.Cell(3, 2).Value = "Product";
-            ws.Cell(3, 3).Value = "Category";
-            ws.Cell(3, 4).Value = "Quantity";
-            ws.Cell(3, 5).Value = "Comment";
+            ws.Cell(3, 1).Value = "Datum";
+            ws.Cell(3, 2).Value = "Artikel";
+            ws.Cell(3, 3).Value = "Kategorie";
+            ws.Cell(3, 4).Value = "Menge";
+            ws.Cell(3, 5).Value = "Bemerkung";
 
             int row = 4;
             foreach (var t in data)
@@ -198,11 +228,11 @@ namespace WarehouseApp.Controllers
             using var workbook = new XLWorkbook();
             var ws = workbook.AddWorksheet(title);
 
-            ws.Cell(1, 1).Value = "Date";
-            ws.Cell(1, 2).Value = "Product";
-            ws.Cell(1, 3).Value = "Category";
-            ws.Cell(1, 4).Value = "Qty";
-            ws.Cell(1, 5).Value = "Comment";
+            ws.Cell(1, 1).Value = "Datum";
+            ws.Cell(1, 2).Value = "Artikel";
+            ws.Cell(1, 3).Value = "Kategorie";
+            ws.Cell(1, 4).Value = "Menge";
+            ws.Cell(1, 5).Value = "Bemerkung";
 
             int row = 2;
 

@@ -181,11 +181,11 @@ namespace WarehouseApp.Controllers
             var worksheet = workbook.Worksheets.Add("Transactions");
 
             // 🔹 Заголовки
-            worksheet.Cell(1, 1).Value = "Date";
-            worksheet.Cell(1, 2).Value = "Product";
-            worksheet.Cell(1, 3).Value = "Category";
-            worksheet.Cell(1, 4).Value = "Quantity";
-            worksheet.Cell(1, 5).Value = "Type";
+            worksheet.Cell(1, 1).Value = "Datum";
+            worksheet.Cell(1, 2).Value = "Artikel";
+            worksheet.Cell(1, 3).Value = "Kategorie";
+            worksheet.Cell(1, 4).Value = "Menge";
+            worksheet.Cell(1, 5).Value = "Typ";
 
             // 🔹 Дані
             int row = 2;
@@ -210,103 +210,6 @@ namespace WarehouseApp.Controllers
             return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> ExportToPdf([FromBody] PdfExportRequest request)
-        {
-            var query = _context.Transactions
-                .Include(t => t.Product)
-                .ThenInclude(p => p.Category)
-                .AsQueryable();
-
-            if (DateTime.TryParse(request.FromDate, out var fromDate))
-                query = query.Where(t => t.Date >= fromDate);
-
-            if (DateTime.TryParse(request.ToDate, out var toDate))
-                query = query.Where(t => t.Date <= toDate);
-
-            if (!string.IsNullOrEmpty(request.Type))
-                query = query.Where(t => t.TransactionType == request.Type);
-
-            if (int.TryParse(request.CategoryId, out var categoryId) && categoryId > 0)
-                query = query.Where(t => t.Product.CategoryId == categoryId);
-
-            var transactions = await query
-                .OrderByDescending(t => t.Date)
-                .Take(100)
-                .ToListAsync();
-
-            // 🧾 Генерація PDF з графіком
-            var pdf = Document.Create(container =>
-            {
-                container.Page(page =>
-                {
-                    page.Margin(40);
-
-                    // Header
-                    page.Header().Column(header =>
-                    {
-                        header.Item().AlignCenter().Text("🏭 Warehouse Report").FontSize(20).Bold();
-                        header.Item().AlignCenter().Text($"Generated {DateTime.Now:yyyy-MM-dd HH:mm}").FontSize(10);
-                    });
-
-                    // Основний контент
-                    page.Content().Column(content =>
-                    {
-                        // 🔹 Додаємо зображення графіка
-                        if (!string.IsNullOrEmpty(request.ChartBase64))
-                        {
-                            content.Item().AlignCenter().Image(request.ChartBase64);
-                            content.Item().PaddingVertical(10);
-                        }
-
-                        // Таблиця
-                        content.Item().Table(table =>
-                        {
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.RelativeColumn(2);
-                                columns.RelativeColumn(2);
-                                columns.RelativeColumn(2);
-                                columns.RelativeColumn(2);
-                                columns.RelativeColumn(1);
-                            });
-
-                            table.Header(header =>
-                            {
-                                header.Cell().Text("Date").Bold();
-                                header.Cell().Text("Product").Bold();
-                                header.Cell().Text("Category").Bold();
-                                header.Cell().Text("Type").Bold();
-                                header.Cell().Text("Qty").Bold();
-                            });
-
-                            foreach (var t in transactions)
-                            {
-                                table.Cell().Text(t.Date.ToString("yyyy-MM-dd"));
-                                table.Cell().Text(t.Product?.Name ?? "-");
-                                table.Cell().Text(t.Product?.Category?.Name ?? "-");
-                                table.Cell().Text(t.TransactionType)
-                                    .FontColor(t.TransactionType == "IN" ? Colors.Green.Medium : Colors.Red.Medium);
-                                table.Cell().Text(t.Quantity.ToString());
-                            }
-                        });
-                    });
-
-                    // Footer
-                    page.Footer().AlignCenter().Text("© 2025 WarehouseApp").FontSize(9).FontColor(Colors.Grey.Darken1);
-                });
-            }).GeneratePdf();
-
-            return File(pdf, "application/pdf", "Warehouse_Report.pdf");
-        } 
     }
 }
 
-public class PdfExportRequest
-{
-    public string? ChartBase64 { get; set; }
-    public string? FromDate { get; set; }
-    public string? ToDate { get; set; }
-    public string? Type { get; set; }
-    public string? CategoryId { get; set; }
-}

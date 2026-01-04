@@ -17,11 +17,22 @@ namespace WarehouseApp.Controllers
         }
 
         // GET: /Categories
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? search)
         {
-            var categories = await _context.Categories.ToListAsync();
+            var query = _context.Categories.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(c => c.Name.Contains(search));
+
+            var categories = await query
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+
+            ViewBag.Search = search;
+
             return View(categories);
         }
+
 
         // GET: /Categories/Create
         public IActionResult Create()

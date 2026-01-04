@@ -1,39 +1,81 @@
 ﻿@model WarehouseApp.Models.Transaction
 
-<form asp-action="Create" method="post">
+@{
+    ViewData["Title"] = "Add Transaction";
+}
 
-    <div class="mb-3">
-        <label asp-for="ProductId"></label>
-        <select asp-for="ProductId"
-                asp-items="ViewBag.ProductId"
-                class="form-select">
-            <option value="">-- Select product --</option>
-        </select>
-        <span asp-validation-for="ProductId" class="text-danger"></span>
+<div class="container mt-4" style="max-width: 600px;">
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-success text-white">
+            <i class="bi bi-plus-circle"></i> Buchung hinzufügen
+        </div>
+
+        <div class="card-body">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <!-- PRODUCT -->
+                <div class="mb-3">
+                    <label asp-for="ProductId" class="form-label">Artikel</label>
+                    <select asp-for="ProductId"
+                            asp-items="ViewBag.ProductId"
+                            class="form-select">
+                        <option value="">-- Artikel auswählen --</option>
+                    </select>
+                    <span asp-validation-for="ProductId" class="text-danger"></span>
+                </div>
+
+                <!-- TYPE -->
+                <div class="mb-3">
+                    <label asp-for="TransactionType" class="form-label">Bewegungstyp</label>
+                    <select asp-for="TransactionType" class="form-select">
+                        <option value="IN">Eingang (Bestand erhöhen)</option>
+                        <option value="OUT">Ausgang (Bestand reduzieren)</option>
+                    </select>
+                    <span asp-validation-for="TransactionType" class="text-danger"></span>
+                </div>
+
+                <!-- QUANTITY -->
+                <div class="mb-3">
+                    <label asp-for="Quantity" class="form-label">Menge</label>
+                    <input asp-for="Quantity"
+                           type="number"
+                           min="1"
+                           class="form-control"
+                           placeholder="Menge eingeben" />
+                    <span asp-validation-for="Quantity" class="text-danger"></span>
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            @Html.ValidationSummary(false)
+                        </div>
+                    }
+
+                </div>
+
+                <!-- COMMENT -->
+                <div class="mb-3">
+                    <label asp-for="Comment" class="form-label">Bemerkung</label>
+                    <input asp-for="Comment"
+                           class="form-control"
+                           placeholder="Optionale Bemerkung" />
+                </div>
+
+                <!-- ACTIONS -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle"></i> Speichern
+                    </button>
+
+                    <a asp-action="Index" class="btn btn-secondary w-100">
+                        <i class="bi bi-arrow-left"></i> Abbrechen
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
-
-    <div class="mb-3">
-        <label asp-for="TransactionType"></label>
-        <select asp-for="TransactionType" class="form-select">
-            <option value="IN">IN</option>
-            <option value="OUT">OUT</option>
-        </select>
-        <span asp-validation-for="TransactionType" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Quantity"></label>
-        <input asp-for="Quantity" type="number" class="form-control" min="1" />
-        <span asp-validation-for="Quantity" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Comment"></label>
-        <input asp-for="Comment" class="form-control" />
-    </div>
-
-    <button type="submit" class="btn btn-primary">Save</button>
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

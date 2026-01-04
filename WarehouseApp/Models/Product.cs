@@ -17,7 +17,7 @@ namespace WarehouseApp.Models
         public int Quantity { get; set; } = 0;
 
         [Range(0, int.MaxValue, ErrorMessage = "Minimum stock cannot be negative.")]
-        public int? MinimumStock { get; set; } = 0;
+        public int MinimumStock { get; set; } = 0;
 
         public Category? Category { get; set; }
 
