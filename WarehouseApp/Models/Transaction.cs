@@ -7,7 +7,7 @@ namespace WarehouseApp.Models
         public int TransactionId { get; set; }
 
         [Required]
-        public int ProductId { get; set; }
+        public int? ProductId { get; set; }
 
         [Required]
         [Range(1, int.MaxValue, ErrorMessage = "Quantity must be greater than 0")]

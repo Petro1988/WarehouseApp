@@ -96,7 +96,7 @@ namespace WarehouseApp.Controllers
                 {
                     if (transaction.Quantity > product.Quantity)
                     {
-                        ModelState.AddModelError(nameof(transaction.Quantity), $"Only {product.Quantity} items available in stock.");
+                        ModelState.AddModelError(nameof(transaction.Quantity), $"Nur {product.Quantity} Artikel auf Lager verfügbar.");
                         ViewData["ProductId"] = new SelectList(_context.Products, "ProductId", "Name", transaction.ProductId);
                         return View(transaction);
                     }
@@ -133,6 +133,161 @@ namespace WarehouseApp.Controllers
 
             ViewData["ProductId"] = new SelectList(_context.Products, "ProductId", "Name", transaction.ProductId);
             return View(transaction);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var transaction = await _context.Transactions
+                .Include(t => t.Product)
+                .FirstOrDefaultAsync(t => t.TransactionId == id);
+
+            if (transaction == null)
+                return NotFound();
+
+            ViewData["ProductId"] = new SelectList(
+                _context.Products.OrderBy(p => p.Name),
+                "ProductId",
+                "Name",
+                transaction.ProductId
+            );
+
+            return View(transaction);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Edit(int id, Transaction model)
+        {
+            if (id != model.TransactionId)
+                return NotFound();
+
+            if (model.Quantity <= 0)
+            {
+                ModelState.AddModelError("Quantity", "Quantity must be greater than 0.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewData["ProductId"] = new SelectList(
+                    _context.Products.OrderBy(p => p.Name),
+                    "ProductId",
+                    "Name",
+                    model.ProductId
+                );
+                return View(model);
+            }
+
+
+            var transaction = await _context.Transactions
+                .Include(t => t.Product)
+                .FirstOrDefaultAsync(t => t.TransactionId == id);
+
+            if (transaction == null)
+                return NotFound();
+
+            var oldProduct = await _context.Products.FindAsync(transaction.ProductId);
+            if (oldProduct == null)
+                return NotFound();
+
+            // 🔁 Відкат старої транзакції
+            if (transaction.TransactionType == "IN")
+                oldProduct.Quantity -= transaction.Quantity;
+            else
+                oldProduct.Quantity += transaction.Quantity;
+
+            var newProduct = await _context.Products.FindAsync(model.ProductId);
+            if (newProduct == null)
+            {
+                ModelState.AddModelError("", "Selected product not found.");
+                goto ReturnView;
+            }
+
+            // 🔄 Застосування нової транзакції
+            if (model.TransactionType == "IN")
+            {
+                newProduct.Quantity += model.Quantity;
+            }
+            else if (model.TransactionType == "OUT")
+            {
+                if (model.Quantity > newProduct.Quantity)
+                {
+                    ModelState.AddModelError("Quantity", "Not enough stock for this product.");
+                    goto ReturnView;
+                }
+                newProduct.Quantity -= model.Quantity;
+            }
+
+            // 📝 Оновлення полів
+            transaction.ProductId = model.ProductId;
+            transaction.Quantity = model.Quantity;
+            transaction.TransactionType = model.TransactionType;
+            transaction.Comment = model.Comment;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Transaction updated successfully.";
+            return RedirectToAction(nameof(Index));
+
+        ReturnView:
+            ViewData["ProductId"] = new SelectList(
+                _context.Products.OrderBy(p => p.Name),
+                "ProductId",
+                "Name",
+                model.ProductId
+            );
+            return View(model);
+        }
+
+
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var transaction = await _context.Transactions
+                .Include(t => t.Product)
+                .FirstOrDefaultAsync(t => t.TransactionId == id);
+
+            if (transaction == null)
+                return NotFound();
+
+            return View(transaction);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var transaction = await _context.Transactions
+                .Include(t => t.Product)
+                .FirstOrDefaultAsync(t => t.TransactionId == id);
+
+            if (transaction == null)
+                return NotFound();
+
+            var product = transaction.Product;
+
+            if (product == null)
+                return BadRequest();
+
+            // 🔁 ВІДКОТ СКЛАДУ
+            if (transaction.TransactionType == "IN")
+            {
+                product.Quantity -= transaction.Quantity;
+            }
+            else if (transaction.TransactionType == "OUT")
+            {
+                product.Quantity += transaction.Quantity;
+            }
+
+            _context.Transactions.Remove(transaction);
+            _context.Products.Update(product);
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Buchung wurde gelöscht.";
+            return RedirectToAction(nameof(Index));
         }
     }
 }

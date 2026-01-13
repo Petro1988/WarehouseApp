@@ -1,7 +1,7 @@
 ﻿@model WarehouseApp.Models.PaginatedList<WarehouseApp.Models.Product>
 
 @{
-    ViewData["Title"] = "Products";
+    ViewData["Title"] = "Artikel";
     var query = Context.Request.Query;
     var currentSize = ViewBag.PageSize as int? ?? 10;
 }

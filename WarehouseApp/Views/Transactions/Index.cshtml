@@ -1,7 +1,7 @@
 ﻿@model WarehouseApp.Models.PaginatedList<WarehouseApp.Models.Transaction>
 
 @{
-    ViewData["Title"] = "Transactions";
+    ViewData["Title"] = "Buchungen";
     var query = Context.Request.Query;
 }
 
@@ -99,6 +99,7 @@
                         <th>Kategorie</th>
                         <th class="text-center">Menge</th>
                         <th>Bemerkung</th>
+                        <th>Aktionen</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -119,6 +120,21 @@
                             <td>@item.Product?.Category?.Name</td>
                             <td class="text-center">@item.Quantity</td>
                             <td class="text-muted">@item.Comment</td>
+                            <td class="text-end">
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@item.TransactionId"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    <a asp-action="Delete" asp-route-id="@item.TransactionId"
+                                       class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                }
+                            </td>
+
                         </tr>
                     }
                 </tbody>

@@ -1,0 +1,67 @@
+﻿@model WarehouseApp.Models.Transaction
+
+@{
+    ViewData["Title"] = "Buchung löschen";
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow-sm border-danger">
+
+        <div class="card-header bg-danger text-white">
+            <i class="bi bi-exclamation-triangle"></i>
+            Buchung löschen
+        </div>
+
+        <div class="card-body">
+
+            <p class="mb-4">
+                Sind Sie sicher, dass Sie diese Buchung
+                <strong>dauerhaft löschen</strong> möchten?
+            </p>
+
+            <dl class="row">
+
+                <dt class="col-sm-3">Datum</dt>
+                <dd class="col-sm-9">
+                    @Model.Date.ToString("yyyy-MM-dd HH:mm")
+                </dd>
+
+                <dt class="col-sm-3">Artikel</dt>
+                <dd class="col-sm-9">@Model.Product?.Name</dd>
+
+                <dt class="col-sm-3">Typ</dt>
+                <dd class="col-sm-9">
+                    <span class="badge @(Model.TransactionType == "IN" ? "bg-success" : "bg-danger")">
+                        @Model.TransactionType
+                    </span>
+                </dd>
+
+                <dt class="col-sm-3">Menge</dt>
+                <dd class="col-sm-9">@Model.Quantity</dd>
+
+                <dt class="col-sm-3">Bemerkung</dt>
+                <dd class="col-sm-9">@Model.Comment</dd>
+
+            </dl>
+
+        </div>
+
+        <div class="card-footer d-flex justify-content-end gap-2">
+
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle"></i> Abbrechen
+            </a>
+
+            <form asp-action="Delete" method="post">
+                <input type="hidden" asp-for="TransactionId" />
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Löschen
+                </button>
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
