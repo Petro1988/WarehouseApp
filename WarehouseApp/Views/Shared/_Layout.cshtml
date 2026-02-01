@@ -11,21 +11,36 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <style>
+        /* ===== BASE ===== */
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
         body {
             background-color: #f8f9fa;
             display: flex;
-            min-height: 100vh;
-            overflow-x: hidden;
+            overflow: hidden; /* ❗ прибираємо загальний скрол */
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         }
 
-        /* Sidebar */
+        /* ===== SIDEBAR ===== */
         .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
             width: 240px;
             background-color: #212529;
             color: #fff;
-            flex-shrink: 0;
             display: flex;
             flex-direction: column;
+            overflow-y: auto; /* якщо меню довге */
+            z-index: 1000;
         }
 
             .sidebar .brand {
@@ -34,6 +49,7 @@
                 padding: 1rem;
                 border-bottom: 1px solid rgba(255,255,255,0.1);
                 text-align: center;
+                flex-shrink: 0;
             }
 
             .sidebar a {
@@ -51,19 +67,36 @@
                     font-size: 1.1rem;
                 }
 
-                .sidebar a:hover, .sidebar a.active {
+                .sidebar a:hover,
+                .sidebar a.active {
                     background-color: #343a40;
                     color: #fff;
                     border-left: 4px solid #0d6efd;
                 }
 
-        /* Main content */
+        /* ===== MAIN WRAPPER ===== */
         .main-content {
-            flex-grow: 1;
+            height: 100vh;
+            width: calc(100% - 240px);
+            height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden; /* ❗ скрол тільки всередині main */
         }
 
+            /* sidebar є */
+            .main-content.with-sidebar {
+                margin-left: 240px;
+                width: calc(100% - 240px);
+            }
+
+            /* sidebar нема */
+            .main-content.no-sidebar {
+                margin-left: 0;
+                width: 100%;
+            }
+
+        /* ===== TOPBAR ===== */
         .topbar {
             background-color: #fff;
             padding: 0.75rem 1.25rem;
@@ -71,26 +104,56 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
+            z-index: 500;
         }
 
+        /* ===== CONTENT (SCROLL HERE) ===== */
         main {
             padding: 1.5rem;
+            flex-grow: 1;
+            overflow-y: auto; /* ✅ ЄДИНЕ місце зі скролом */
+            min-height: 0; /* 🔥 критично для flex */
         }
 
+        /* ===== FOOTER ===== */
         footer {
-            margin-top: auto;
             background: #fff;
             text-align: center;
             padding: 0.75rem;
             font-size: 0.9rem;
             color: #6c757d;
             border-top: 1px solid #dee2e6;
+            flex-shrink: 0;
         }
 
+        /* ===== BUTTONS ===== */
         .user-btn {
             display: flex;
             align-items: center;
             gap: 0.5rem;
+        }
+
+        /* ===== MOBILE ===== */
+        @@media (max-width: 768px) {
+            .sidebar
+
+        {
+            position: relative;
+            width: 100%;
+            height: auto;
+        }
+
+        .main-content {
+            margin-left: 0;
+            width: 100%;
+            height: auto;
+        }
+
+        body {
+            overflow: auto;
+        }
+
         }
     </style>
 </head>
@@ -99,7 +162,7 @@
     @if (User.Identity?.IsAuthenticated == true)
     {
         <!-- 🧭 SIDEBAR -->
-        <div class="sidebar">
+        <div class="sidebar">           
             <div class="brand">
                 <i class="bi bi-box-seam"></i> SVG-IT Lager
             </div>
@@ -154,7 +217,9 @@
     }
 
     <!-- 📊 MAIN CONTENT -->
-    <div class="main-content">
+    <!-- 📊 MAIN CONTENT -->
+    <div class="main-content @(User.Identity?.IsAuthenticated == true ? "with-sidebar" : "no-sidebar")">
+
         <div class="topbar">
             <div>
                 <h5 class="mb-0">@ViewData["Title"]</h5>
@@ -167,7 +232,8 @@
                         <i class="bi bi-person-circle"></i> @User.Identity.Name
                     </span>
 
-                    <a asp-controller="Account" asp-action="ChangePassword" class="btn btn-sm btn-outline-secondary me-2 user-btn">
+                    <a asp-controller="Account" asp-action="ChangePassword"
+                       class="btn btn-sm btn-outline-secondary me-2 user-btn">
                         <i class="bi bi-key"></i> Passwort ändern
                     </a>
 
@@ -179,7 +245,8 @@
                 }
                 else
                 {
-                    <a asp-controller="Account" asp-action="Login" class="btn btn-sm btn-outline-primary user-btn">
+                    <a asp-controller="Account" asp-action="Login"
+                       class="btn btn-sm btn-outline-primary user-btn">
                         <i class="bi bi-box-arrow-in-right"></i> Anmelden
                     </a>
                 }
@@ -193,6 +260,7 @@
         <footer>
             &copy; 2025 - SVG-IT Lager | <a asp-controller="Home" asp-action="Privacy">Privacy</a>
         </footer>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -203,11 +271,11 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
 
-            flatpickr("input[type='date']", {
-                locale: "de",
-                dateFormat: "d.m.Y",
-                allowInput: true
-            });
+        flatpickr("input.date-picker", {
+            locale: "de",
+            dateFormat: "d.m.Y",
+            allowInput: true
+        });
 
         });
     </script>

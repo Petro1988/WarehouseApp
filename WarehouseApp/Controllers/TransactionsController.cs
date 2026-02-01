@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using WarehouseApp.Data;
 using WarehouseApp.Models;
 
@@ -19,16 +20,34 @@ namespace WarehouseApp.Controllers
 
         // GET: /Transactions
         public async Task<IActionResult> Index(
-            string? type, int? productId, int? categoryId,
-            string? search, DateTime? fromDate, DateTime? toDate,
-            int pageNumber = 1, int pageSize = 20)
+            string? type,
+            int? productId,
+            int? categoryId,
+            string? search,
+            string? fromDate,
+            string? toDate)
         {
+            DateTime? from = null;
+            DateTime? to = null;
+
+            if (!string.IsNullOrWhiteSpace(fromDate))
+            {
+                if (DateTime.TryParse(fromDate, out var f))
+                    from = f.Date;
+            }
+
+            if (!string.IsNullOrWhiteSpace(toDate))
+            {
+                if (DateTime.TryParse(toDate, out var t))
+                    to = t.Date.AddDays(1).AddTicks(-1);
+            }
+
             var query = _context.Transactions
                 .Include(t => t.Product)
                 .ThenInclude(p => p.Category)
                 .AsQueryable();
 
-            // 🔍 Фільтри
+            // 🔍 ФІЛЬТРИ
             if (!string.IsNullOrWhiteSpace(type))
                 query = query.Where(t => t.TransactionType == type);
 
@@ -41,30 +60,36 @@ namespace WarehouseApp.Controllers
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(t => t.Comment != null && t.Comment.Contains(search));
 
-            if (fromDate.HasValue)
-                query = query.Where(t => t.Date >= fromDate.Value);
+            if (from.HasValue)
+                query = query.Where(t => t.Date >= from.Value);
 
-            if (toDate.HasValue)
-                query = query.Where(t => t.Date <= toDate.Value);
+            if (to.HasValue)
+                query = query.Where(t => t.Date <= to.Value);
 
-            // 🔽 Сортування
-            query = query.OrderByDescending(t => t.Date);
+            var data = await query
+                .OrderByDescending(t => t.Date)
+                .ToListAsync();
 
-            // 📊 Пагінація
-            var paginatedTransactions = await PaginatedList<Transaction>.CreateAsync(query, pageNumber, pageSize);
-
-            // 🔧 Дані для фільтрів
+            // 🔧 ФІЛЬТРИ ДЛЯ VIEW
             ViewData["ProductId"] = new SelectList(_context.Products, "ProductId", "Name", productId);
             ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "Name", categoryId);
 
             ViewBag.Type = type;
             ViewBag.Search = search;
-            ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
-            ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
-            ViewBag.PageSize = pageSize;
+            ViewBag.FromDate = fromDate;
+            ViewBag.ToDate = toDate;
 
-            return View(paginatedTransactions);
+            // 🟢 ПЕРІОД ВИБІРКИ
+            if (from.HasValue || to.HasValue)
+            {
+                var fromText = from?.ToString("dd.MM.yyyy") ?? "–";
+                var toText = to?.ToString("dd.MM.yyyy") ?? "–";
+                ViewBag.Period = $"Zeitraum: {fromText} – {toText}";
+            }
+
+            return View(data);
         }
+
 
         // GET: /Transactions/Create
         public IActionResult Create()
@@ -78,108 +103,73 @@ namespace WarehouseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Transaction transaction)
         {
-            if (ModelState.IsValid)
-            {
-                var product = await _context.Products.FindAsync(transaction.ProductId);
-                if (product == null)
-                {
-                    ModelState.AddModelError("", "Product not found.");
-                    return View(transaction);
-                }
+            // 🔐 системні поля
+            transaction.CreatedBy = User.Identity?.Name ?? "System";
+            transaction.Date = DateTime.Now;
+            transaction.LastModifiedBy = null;
+            transaction.LastModifiedAt = null;
 
-                // 🔁 Оновлення кількості на складі
-                if (transaction.TransactionType.ToUpper() == "IN")
-                {
-                    product.Quantity += transaction.Quantity;
-                }
-                else if (transaction.TransactionType.ToUpper() == "OUT")
-                {
-                    if (transaction.Quantity > product.Quantity)
-                    {
-                        ModelState.AddModelError(nameof(transaction.Quantity), $"Nur {product.Quantity} Artikel auf Lager verfügbar.");
-                        ViewData["ProductId"] = new SelectList(_context.Products, "ProductId", "Name", transaction.ProductId);
-                        return View(transaction);
-                    }
-                    product.Quantity -= transaction.Quantity;
-                }
-                else
-                {
-                    ModelState.AddModelError("", "Invalid transaction type (use IN or OUT).");
-                    return View(transaction);
-                }
-
-                transaction.Date = DateTime.Now;
-                _context.Add(transaction);
-                _context.Update(product);
-                await _context.SaveChangesAsync();
-
-                TempData["Success"] = "Transaction saved successfully.";
-                return RedirectToAction(nameof(Index));
-            }
+            // ❗ кажемо MVC не валідовувати ці поля з форми
+            ModelState.Remove(nameof(transaction.CreatedBy));
+            ModelState.Remove(nameof(transaction.LastModifiedBy));
+            ModelState.Remove(nameof(transaction.LastModifiedAt));
 
             if (!ModelState.IsValid)
             {
-                var errors = ModelState
-                    .SelectMany(x => x.Value.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
-
-                foreach (var error in errors)
-                    Console.WriteLine("MODEL ERROR: " + error);
-
-                ViewData["ProductId"] = new SelectList(_context.Products, "ProductId", "Name", transaction.ProductId);
+                ViewData["ProductId"] = new SelectList(
+                    _context.Products,
+                    "ProductId",
+                    "Name",
+                    transaction.ProductId
+                );
                 return View(transaction);
             }
 
-            ViewData["ProductId"] = new SelectList(_context.Products, "ProductId", "Name", transaction.ProductId);
-            return View(transaction);
+            var product = await _context.Products.FindAsync(transaction.ProductId);
+            if (product == null)
+            {
+                ModelState.AddModelError("", "Artikel nicht gefunden.");
+                ViewData["ProductId"] = new SelectList(_context.Products, "ProductId", "Name");
+                return View(transaction);
+            }
+
+            // 🔁 склад
+            if (transaction.TransactionType == "IN")
+            {
+                product.Quantity += transaction.Quantity;
+            }
+            else if (transaction.TransactionType == "OUT")
+            {
+                if (transaction.Quantity > product.Quantity)
+                {
+                    ModelState.AddModelError(nameof(transaction.Quantity),
+                        $"Nur {product.Quantity} Artikel auf Lager verfügbar.");
+
+                    ViewData["ProductId"] = new SelectList(
+                        _context.Products,
+                        "ProductId",
+                        "Name",
+                        transaction.ProductId
+                    );
+                    return View(transaction);
+                }
+                product.Quantity -= transaction.Quantity;
+            }
+
+            _context.Transactions.Add(transaction);
+            _context.Products.Update(product);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Buchung wurde erfolgreich gespeichert.";
+            return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Edit(int id)
-        {
-            var transaction = await _context.Transactions
-                .Include(t => t.Product)
-                .FirstOrDefaultAsync(t => t.TransactionId == id);
-
-            if (transaction == null)
-                return NotFound();
-
-            ViewData["ProductId"] = new SelectList(
-                _context.Products.OrderBy(p => p.Name),
-                "ProductId",
-                "Name",
-                transaction.ProductId
-            );
-
-            return View(transaction);
-        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, Transaction model)
         {
-            if (id != model.TransactionId)
-                return NotFound();
-
-            if (model.Quantity <= 0)
-            {
-                ModelState.AddModelError("Quantity", "Quantity must be greater than 0.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                ViewData["ProductId"] = new SelectList(
-                    _context.Products.OrderBy(p => p.Name),
-                    "ProductId",
-                    "Name",
-                    model.ProductId
-                );
-                return View(model);
-            }
-
-
             var transaction = await _context.Transactions
                 .Include(t => t.Product)
                 .FirstOrDefaultAsync(t => t.TransactionId == id);
@@ -200,7 +190,7 @@ namespace WarehouseApp.Controllers
             var newProduct = await _context.Products.FindAsync(model.ProductId);
             if (newProduct == null)
             {
-                ModelState.AddModelError("", "Selected product not found.");
+                ModelState.AddModelError("", "Ausgewähltes Produkt wurde nicht gefunden.");
                 goto ReturnView;
             }
 
@@ -213,7 +203,7 @@ namespace WarehouseApp.Controllers
             {
                 if (model.Quantity > newProduct.Quantity)
                 {
-                    ModelState.AddModelError("Quantity", "Not enough stock for this product.");
+                    ModelState.AddModelError("Quantity", "Nicht genügend Bestand für dieses Produkt.");
                     goto ReturnView;
                 }
                 newProduct.Quantity -= model.Quantity;
@@ -224,10 +214,12 @@ namespace WarehouseApp.Controllers
             transaction.Quantity = model.Quantity;
             transaction.TransactionType = model.TransactionType;
             transaction.Comment = model.Comment;
+            transaction.LastModifiedBy = User.Identity?.Name ?? "System";
+            transaction.LastModifiedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Transaction updated successfully.";
+            TempData["Success"] = "Buchung wurde erfolgreich aktualisiert";
             return RedirectToAction(nameof(Index));
 
         ReturnView:
@@ -238,6 +230,26 @@ namespace WarehouseApp.Controllers
                 model.ProductId
             );
             return View(model);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var transaction = await _context.Transactions
+                .Include(t => t.Product)
+                .FirstOrDefaultAsync(t => t.TransactionId == id);
+
+            if (transaction == null)
+                return NotFound();
+
+            ViewData["ProductId"] = new SelectList(
+                _context.Products.OrderBy(p => p.Name),
+                "ProductId",
+                "Name",
+                transaction.ProductId
+            );
+
+            return View(transaction);
         }
 
 

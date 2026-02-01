@@ -1,14 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WarehouseApp.Data;
-using QuestPDF.Fluent;
-using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
-using System.IO;
 using WarehouseApp.Models;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace WarehouseApp.Controllers
 {
@@ -21,87 +14,118 @@ namespace WarehouseApp.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index(DateTime? fromDate, DateTime? toDate, string? type, int? categoryId)
+        // =========================
+        // 📊 MAIN DASHBOARD
+        // =========================
+        public async Task<IActionResult> Index(
+            string? fromDate,
+            string? toDate,
+            string? type,
+            int? categoryId)
         {
             var query = _context.Transactions
                 .Include(t => t.Product)
                 .ThenInclude(p => p.Category)
                 .AsQueryable();
 
-            // ✅ Фільтрація за датами
-            if (fromDate.HasValue)
-                query = query.Where(t => t.Date >= fromDate.Value);
-            if (toDate.HasValue)
-                query = query.Where(t => t.Date <= toDate.Value);
+            // 🔎 DATE FILTER (STABLE)
+            if (!string.IsNullOrWhiteSpace(fromDate) &&
+                DateTime.TryParse(fromDate, out var from))
+            {
+                query = query.Where(t => t.Date.Date >= from.Date);
+            }
 
-            // ✅ Фільтрація за типом (IN / OUT)
-            if (!string.IsNullOrEmpty(type))
+            if (!string.IsNullOrWhiteSpace(toDate) &&
+                DateTime.TryParse(toDate, out var to))
+            {
+                query = query.Where(t => t.Date.Date <= to.Date);
+            }
+
+            // 🔎 TYPE
+            if (type == "IN" || type == "OUT")
                 query = query.Where(t => t.TransactionType == type);
 
-            // ✅ Фільтрація за категорією
-            if (categoryId.HasValue && categoryId.Value > 0)
-                query = query.Where(t => t.Product.CategoryId == categoryId.Value);
+            // 🔎 CATEGORY
+            if (categoryId.HasValue && categoryId > 0)
+                query = query.Where(t => t.Product.CategoryId == categoryId);
 
-            var transactions = await query
-                .OrderByDescending(t => t.Date)
-                .Take(50)
-                .ToListAsync();
-
-            // Для вибору в UI
-            ViewBag.Categories = await _context.Categories.OrderBy(c => c.Name).ToListAsync();
+            // 🧠 ViewBag (BACK TO VIEW)
+            ViewBag.FromDate = fromDate;
+            ViewBag.ToDate = toDate;
             ViewBag.SelectedType = type;
             ViewBag.SelectedCategory = categoryId;
-            ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
-            ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
-            ViewBag.Transactions = transactions;
+
+            ViewBag.Categories = await _context.Categories.ToListAsync();
+            ViewBag.Transactions = await query
+                .OrderByDescending(t => t.Date)
+                .ToListAsync();
+
+            DateTime? fromParsed = null;
+            DateTime? toParsed = null;
+
+            if (!string.IsNullOrWhiteSpace(fromDate) && DateTime.TryParse(fromDate, out var f))
+                fromParsed = f;
+
+            if (!string.IsNullOrWhiteSpace(toDate) && DateTime.TryParse(toDate, out var t))
+                toParsed = t;
+
+            string periodText;
+
+            if (fromParsed.HasValue && toParsed.HasValue)
+            {
+                periodText = $"Zeitraum: {fromParsed:dd.MM.yyyy} – {toParsed:dd.MM.yyyy}";
+            }
+            else if (fromParsed.HasValue)
+            {
+                periodText = $"Ab: {fromParsed:dd.MM.yyyy}";
+            }
+            else if (toParsed.HasValue)
+            {
+                periodText = $"Bis: {toParsed:dd.MM.yyyy}";
+            }
+            else
+            {
+                periodText = "Zeitraum: Alle Daten";
+            }
+
+            ViewBag.PeriodText = periodText;
 
             return View();
         }
 
+        // =========================
+        // 📈 LINE CHART
+        // =========================
         [HttpGet]
-        public async Task<IActionResult> Filter(DateTime? fromDate, DateTime? toDate, string? type, int? categoryId)
+        public async Task<IActionResult> GetChartData(
+            string? fromDate,
+            string? toDate,
+            string? type,
+            int? categoryId)
         {
             var query = _context.Transactions
                 .Include(t => t.Product)
-                .ThenInclude(p => p.Category)
                 .AsQueryable();
 
-            if (fromDate.HasValue)
-                query = query.Where(t => t.Date >= fromDate.Value);
-            if (toDate.HasValue)
-                query = query.Where(t => t.Date <= toDate.Value);
-            if (!string.IsNullOrEmpty(type))
+            if (!string.IsNullOrWhiteSpace(fromDate) &&
+                DateTime.TryParse(fromDate, out var from))
+            {
+                query = query.Where(t => t.Date.Date >= from.Date);
+            }
+
+            if (!string.IsNullOrWhiteSpace(toDate) &&
+                DateTime.TryParse(toDate, out var to))
+            {
+                query = query.Where(t => t.Date.Date <= to.Date);
+            }
+
+            if (type == "IN" || type == "OUT")
                 query = query.Where(t => t.TransactionType == type);
-            if (categoryId.HasValue && categoryId.Value > 0)
-                query = query.Where(t => t.Product.CategoryId == categoryId.Value);
 
-            var transactions = await query
-                .OrderByDescending(t => t.Date)
-                .Take(50)
-                .ToListAsync();
+            if (categoryId.HasValue && categoryId > 0)
+                query = query.Where(t => t.Product.CategoryId == categoryId);
 
-            return PartialView("_TransactionTable", transactions);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetChartData(DateTime? fromDate, DateTime? toDate, string? type, int? categoryId)
-        {
-            var query = _context.Transactions
-                .Include(t => t.Product)
-                .ThenInclude(p => p.Category)
-                .AsQueryable();
-
-            if (fromDate.HasValue)
-                query = query.Where(t => t.Date >= fromDate.Value);
-            if (toDate.HasValue)
-                query = query.Where(t => t.Date <= toDate.Value);
-            if (!string.IsNullOrEmpty(type))
-                query = query.Where(t => t.TransactionType == type);
-            if (categoryId.HasValue && categoryId.Value > 0)
-                query = query.Where(t => t.Product.CategoryId == categoryId.Value);
-
-            // Групування по даті
-            var grouped = await query
+            var data = await query
                 .GroupBy(t => t.Date.Date)
                 .Select(g => new
                 {
@@ -114,30 +138,46 @@ namespace WarehouseApp.Controllers
 
             return Json(new
             {
-                labels = grouped.Select(g => g.Date.ToString("yyyy-MM-dd")),
-                incoming = grouped.Select(g => g.Incoming),
-                outgoing = grouped.Select(g => g.Outgoing)
+                labels = data.Select(x => x.Date.ToString("yyyy-MM-dd")),
+                incoming = data.Select(x => x.Incoming),
+                outgoing = data.Select(x => x.Outgoing)
             });
         }
 
+        // =========================
+        // 🍩 CATEGORY CHART
+        // =========================
         [HttpGet]
-        public async Task<IActionResult> GetCategoryChartData(DateTime? fromDate, DateTime? toDate, string? type, int? categoryId)
+        public async Task<IActionResult> GetCategoryChartData(
+            string? fromDate,
+            string? toDate,
+            string? type,
+            int? categoryId)
         {
             var query = _context.Transactions
                 .Include(t => t.Product)
                 .ThenInclude(p => p.Category)
                 .AsQueryable();
 
-            if (fromDate.HasValue)
-                query = query.Where(t => t.Date >= fromDate.Value);
-            if (toDate.HasValue)
-                query = query.Where(t => t.Date <= toDate.Value);
-            if (!string.IsNullOrEmpty(type))
-                query = query.Where(t => t.TransactionType == type);
-            if (categoryId.HasValue && categoryId.Value > 0)
-                query = query.Where(t => t.Product.CategoryId == categoryId.Value);
+            if (!string.IsNullOrWhiteSpace(fromDate) &&
+                DateTime.TryParse(fromDate, out var from))
+            {
+                query = query.Where(t => t.Date.Date >= from.Date);
+            }
 
-            var grouped = await query
+            if (!string.IsNullOrWhiteSpace(toDate) &&
+                DateTime.TryParse(toDate, out var to))
+            {
+                query = query.Where(t => t.Date.Date <= to.Date);
+            }
+
+            if (type == "IN" || type == "OUT")
+                query = query.Where(t => t.TransactionType == type);
+
+            if (categoryId.HasValue && categoryId > 0)
+                query = query.Where(t => t.Product.CategoryId == categoryId);
+
+            var data = await query
                 .GroupBy(t => t.Product.Category.Name)
                 .Select(g => new
                 {
@@ -149,67 +189,79 @@ namespace WarehouseApp.Controllers
 
             return Json(new
             {
-                labels = grouped.Select(g => g.Category),
-                values = grouped.Select(g => g.Total)
+                labels = data.Select(x => x.Category),
+                values = data.Select(x => x.Total)
             });
         }
 
+        // =========================
+        // 📤 EXCEL EXPORT
+        // =========================
         [HttpGet]
-        public async Task<IActionResult> ExportToExcel(DateTime? fromDate, DateTime? toDate, string? type, int? categoryId)
+        public async Task<IActionResult> ExportToExcel(
+            string? fromDate,
+            string? toDate,
+            string? type,
+            int? categoryId)
         {
             var query = _context.Transactions
                 .Include(t => t.Product)
                 .ThenInclude(p => p.Category)
                 .AsQueryable();
 
-            // 📅 Фільтри
-            if (fromDate.HasValue)
-                query = query.Where(t => t.Date >= fromDate.Value);
-            if (toDate.HasValue)
-                query = query.Where(t => t.Date <= toDate.Value);
-            if (!string.IsNullOrEmpty(type))
+            if (!string.IsNullOrWhiteSpace(fromDate) &&
+                DateTime.TryParse(fromDate, out var from))
+            {
+                query = query.Where(t => t.Date.Date >= from.Date);
+            }
+
+            if (!string.IsNullOrWhiteSpace(toDate) &&
+                DateTime.TryParse(toDate, out var to))
+            {
+                query = query.Where(t => t.Date.Date <= to.Date);
+            }
+
+            if (type == "IN" || type == "OUT")
                 query = query.Where(t => t.TransactionType == type);
-            if (categoryId.HasValue && categoryId.Value > 0)
-                query = query.Where(t => t.Product.CategoryId == categoryId.Value);
+
+            if (categoryId.HasValue && categoryId > 0)
+                query = query.Where(t => t.Product.CategoryId == categoryId);
 
             var transactions = await query
                 .OrderByDescending(t => t.Date)
                 .ToListAsync();
 
-            // 🧾 Створюємо Excel-файл
             using var workbook = new ClosedXML.Excel.XLWorkbook();
-            var worksheet = workbook.Worksheets.Add("Transactions");
+            var ws = workbook.Worksheets.Add("Transactions");
 
-            // 🔹 Заголовки
-            worksheet.Cell(1, 1).Value = "Datum";
-            worksheet.Cell(1, 2).Value = "Artikel";
-            worksheet.Cell(1, 3).Value = "Kategorie";
-            worksheet.Cell(1, 4).Value = "Menge";
-            worksheet.Cell(1, 5).Value = "Typ";
+            ws.Cell(1, 1).Value = "Datum";
+            ws.Cell(1, 2).Value = "Artikel";
+            ws.Cell(1, 3).Value = "Kategorie";
+            ws.Cell(1, 4).Value = "Menge";
+            ws.Cell(1, 5).Value = "Typ";
 
-            // 🔹 Дані
             int row = 2;
             foreach (var t in transactions)
             {
-                worksheet.Cell(row, 1).Value = t.Date.ToString("yyyy-MM-dd HH:mm");
-                worksheet.Cell(row, 2).Value = t.Product?.Name;
-                worksheet.Cell(row, 3).Value = t.Product?.Category?.Name;
-                worksheet.Cell(row, 4).Value = t.Quantity;
-                worksheet.Cell(row, 5).Value = t.TransactionType;
+                ws.Cell(row, 1).Value = t.Date.ToString("yyyy-MM-dd HH:mm");
+                ws.Cell(row, 2).Value = t.Product?.Name;
+                ws.Cell(row, 3).Value = t.Product?.Category?.Name;
+                ws.Cell(row, 4).Value = t.Quantity;
+                ws.Cell(row, 5).Value = t.TransactionType;
                 row++;
             }
 
-            worksheet.Columns().AdjustToContents();
+            ws.Columns().AdjustToContents();
 
-            // 📤 Віддаємо як файл
             using var stream = new MemoryStream();
             workbook.SaveAs(stream);
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
 
-            string fileName = $"Warehouse_Transactions_{DateTime.Now:yyyyMMdd_HHmm}.xlsx";
-            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            return File(
+                stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Warehouse_{DateTime.Now:yyyyMMdd_HHmm}.xlsx"
+            );
         }
-
     }
 }
-

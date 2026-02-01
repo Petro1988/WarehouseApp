@@ -36,20 +36,20 @@ namespace WarehouseApp.Controllers
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
-                ViewBag.Error = "Please enter both username and password.";
+                ViewBag.Error = "Bitte geben Sie sowohl den Benutzernamen als auch das Passwort ein.";
                 return View();
             }
 
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
             if (user == null)
             {
-                ViewBag.Error = "User not found.";
+                ViewBag.Error = "Benutzer nicht gefunden.";
                 return View();
             }
 
             if (!PasswordHelper.VerifyPassword(password, user.PasswordHash))
             {
-                ViewBag.Error = "Incorrect password.";
+                ViewBag.Error = "Falsches Passwort.";
                 return View();
             }
 
@@ -95,13 +95,13 @@ namespace WarehouseApp.Controllers
         {
             if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword))
             {
-                ViewBag.Error = "All fields are required.";
+                ViewBag.Error = "Alle Felder sind erforderlich.";
                 return View();
             }
 
             if (newPassword != confirmPassword)
             {
-                ViewBag.Error = "Passwords do not match.";
+                ViewBag.Error = "Die Passwörter stimmen nicht überein.";
                 return View();
             }
 
@@ -112,21 +112,21 @@ namespace WarehouseApp.Controllers
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
             if (user == null)
             {
-                ViewBag.Error = "User not found.";
+                ViewBag.Error = "Benutzer nicht gefunden.";
                 return View();
             }
 
             if (!PasswordHelper.VerifyPassword(currentPassword, user.PasswordHash))
             {
-                ViewBag.Error = "Current password is incorrect.";
+                ViewBag.Error = "Das aktuelle Passwort ist falsch.";
                 return View();
             }
 
             user.PasswordHash = PasswordHelper.HashPassword(newPassword);
             await _context.SaveChangesAsync();
 
-            ViewBag.Success = "Password updated successfully.";
-            return View();
+            TempData["Success"] = "Passwort wurde erfolgreich aktualisiert.";
+            return RedirectToAction("Index", "Home");
         }
     }
 }

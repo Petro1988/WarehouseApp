@@ -132,13 +132,13 @@ namespace WarehouseApp.Controllers
 
             if (string.IsNullOrWhiteSpace(newPassword))
             {
-                ViewBag.Error = "Password cannot be empty.";
+                ViewBag.Error = "Das Passwort darf nicht leer sein.";
                 return View(user);
             }
 
             if (newPassword != confirmPassword)
             {
-                ViewBag.Error = "Passwords do not match.";
+                ViewBag.Error = "Die Passwörter stimmen nicht überein.";
                 return View(user);
             }
 
@@ -146,7 +146,7 @@ namespace WarehouseApp.Controllers
             user.PasswordHash = PasswordHelper.HashPassword(newPassword);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = $"Password for '{user.Username}' has been updated.";
+            TempData["Success"] = $"Das Passwort für '{user.Username}' wurde erfolgreich aktualisiert";
             return RedirectToAction(nameof(Index));
         }
 

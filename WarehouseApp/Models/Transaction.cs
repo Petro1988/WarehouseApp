@@ -21,6 +21,15 @@ namespace WarehouseApp.Models
 
         public string? Comment { get; set; }
 
+        [Required]
+        [MaxLength(100)]
+        public string CreatedBy { get; set; } = null!;
+
+        [MaxLength(100)]
+        public string? LastModifiedBy { get; set; }
+
+        public DateTime? LastModifiedAt { get; set; }
+
         public Product? Product { get; set; }
     }
 }

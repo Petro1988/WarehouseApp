@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using WarehouseApp.Data;
 using WarehouseApp.Models;
 
+
 namespace WarehouseApp.Controllers
 {
     [Authorize]
@@ -17,6 +18,7 @@ namespace WarehouseApp.Controllers
             _context = context;
         }
 
+        
         // GET: /Products
         public async Task<IActionResult> Index(
             string search,
@@ -102,7 +104,10 @@ namespace WarehouseApp.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id)
         {
-            var product = await _context.Products.FindAsync(id);
+            var product = await _context.Products
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(p => p.ProductId == id);
+
             if (product == null) return NotFound();
 
             ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "Name", product.CategoryId);
@@ -116,6 +121,11 @@ namespace WarehouseApp.Controllers
         public async Task<IActionResult> Edit(int id, Product product)
         {
             if (id != product.ProductId) return NotFound();
+
+            if (product.Quantity < 0 || product.MinimumStock < 0)
+            {
+                ModelState.AddModelError("", "Menge und Mindestbestand dürfen nicht negativ sein.");
+            }
 
             if (ModelState.IsValid)
             {
@@ -146,13 +156,34 @@ namespace WarehouseApp.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            var hasTransactions = await _context.Transactions
+                .AnyAsync(t => t.ProductId == id);
+
+            if (hasTransactions)
+            {
+                TempData["Error"] = "❌ Das Produkt kann nicht gelöscht werden, da es eine Buchungshistorie hat.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var product = await _context.Products.FindAsync(id);
-            if (product != null)
+            if (product == null)
+                return NotFound();
+
+            try
             {
                 _context.Products.Remove(product);
                 await _context.SaveChangesAsync();
             }
+            catch (DbUpdateException)
+            {
+                TempData["Error"] = "❌ Das Produkt kann nicht gelöscht werden, da es in Buchungen verwendet wird.";
+                return RedirectToAction(nameof(Index));
+            }
+
+
+            TempData["Success"] = "✅ Produkt wurde erfolgreich gelöscht.";
             return RedirectToAction(nameof(Index));
         }
+
     }
 }

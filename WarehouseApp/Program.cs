@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using WarehouseApp.Data;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Globalization;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using WarehouseApp.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 

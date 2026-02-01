@@ -7,19 +7,13 @@
         <!-- From -->
         <div class="col-md-2">
             <label class="form-label">Von</label>
-            <input type="date"
-                   name="fromDate"
-                   class="form-control"
-                   value="@ViewBag.FromDate" />
+            <input type="date" name="from" value="@ViewBag.From" class="form-control" />
         </div>
 
         <!-- To -->
         <div class="col-md-2">
             <label class="form-label">Bis</label>
-            <input type="date"
-                   name="toDate"
-                   class="form-control"
-                   value="@ViewBag.ToDate" />
+            <input type="date" name="to" value="@ViewBag.To" class="form-control" />
         </div>
 
         <!-- Category -->
@@ -70,8 +64,8 @@
         </div>
 
         <!-- Clear -->
-        @if (ViewBag.FromDate != null ||
-                ViewBag.ToDate != null ||
+        @if (!string.IsNullOrWhiteSpace(ViewBag.From) ||
+                !string.IsNullOrWhiteSpace(ViewBag.To) ||
                 ViewBag.SelectedCategory != null ||
                 ViewBag.SelectedProduct != null ||
                 !string.IsNullOrWhiteSpace(ViewBag.Search))
@@ -95,6 +89,14 @@
 
     </div>
 </form>
+
+@if (!string.IsNullOrEmpty(ViewBag.PeriodText))
+{
+    <div class="alert alert-info">
+        <i class="bi bi-calendar-event"></i>
+        @ViewBag.PeriodText
+    </div>
+}
 
 <!-- 📋 TABLE -->
 <div class="card shadow-sm">

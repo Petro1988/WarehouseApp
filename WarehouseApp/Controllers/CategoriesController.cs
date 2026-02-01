@@ -91,16 +91,37 @@ namespace WarehouseApp.Controllers
         // POST: /Categories/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")] // 🧩 лише адміністратор
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            var hasProducts = await _context.Products
+                .AnyAsync(p => p.CategoryId == id);
+
+            if (hasProducts)
+            {
+                TempData["Error"] = "❌ Die Kategorie kann nicht gelöscht werden, da sie Produkte enthält.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var category = await _context.Categories.FindAsync(id);
-            if (category != null)
+            if (category == null)
+                return NotFound();
+
+            try
             {
                 _context.Categories.Remove(category);
                 await _context.SaveChangesAsync();
             }
+            catch (DbUpdateException)
+            {
+                TempData["Error"] = "❌ Die Kategorie kann nicht gelöscht werden, da sie in Buchungen verwendet wird.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData["Success"] = "✅ Kategorie wurde erfolgreich gelöscht.";
             return RedirectToAction(nameof(Index));
+
         }
+
     }
 }
