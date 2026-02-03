@@ -18,17 +18,15 @@ namespace WarehouseApp.Controllers
             _context = context;
         }
 
-        // ======================================================
+
         // INDEX
-        // ======================================================
         public async Task<IActionResult> Index()
         {
             return View();
         }
 
-        // ======================================================
+
         // STOCK REPORT
-        // ======================================================
         public async Task<IActionResult> StockReport(
             string? date,
             int? categoryId,
@@ -36,7 +34,7 @@ namespace WarehouseApp.Controllers
             bool onlyBelowMin = false,
             bool export = false)
         {
-            // 1️⃣ дата для розрахунку
+            // Date for calculation
             DateTime calcDate;
 
             if (!string.IsNullOrWhiteSpace(date) && DateTime.TryParse(date, out var parsed))
@@ -50,7 +48,7 @@ namespace WarehouseApp.Controllers
 
             ViewBag.Date = date;
 
-            // ================= QUERY =================
+            // QUERY
             var productsQuery = _context.Products
                 .Include(p => p.Category)
                 .AsQueryable();
@@ -65,7 +63,7 @@ namespace WarehouseApp.Controllers
                 .OrderBy(p => p.Name)
                 .ToListAsync();
 
-            // ================= BALANCE =================
+            // BALANCE
             foreach (var product in products)
             {
                 var balance = await _context.Transactions
@@ -75,7 +73,7 @@ namespace WarehouseApp.Controllers
                 product.Quantity = balance;
             }
 
-            // 🔥 ТІЛЬКИ ТОВАРИ НИЖЧЕ МІНІМУМУ
+            // ONLY ITEMS BELOW MINIMUM
             if (onlyBelowMin)
             {
                 products = products
@@ -83,7 +81,7 @@ namespace WarehouseApp.Controllers
                     .ToList();
             }
 
-            // ================= VIEW =================
+            // VIEW 
             ViewBag.PeriodText = $"Stand am {calcDate:dd.MM.yyyy}";
             ViewBag.SelectedCategory = categoryId;
             ViewBag.SelectedProduct = productId;
@@ -97,9 +95,7 @@ namespace WarehouseApp.Controllers
             return View(products);
         }
 
-        // ======================================================
         // INCOMING REPORT
-        // ======================================================
         public async Task<IActionResult> IncomingReport(
              string? from,
              string? to,
@@ -140,7 +136,7 @@ namespace WarehouseApp.Controllers
                 .OrderByDescending(t => t.Date)
                 .ToListAsync();
 
-            // 🔁 BACK TO VIEW
+            // BACK TO VIEW
             ViewBag.From = from;
             ViewBag.To = to;
             ViewBag.PeriodText = BuildPeriodText(fromDate, toDate);
@@ -159,9 +155,8 @@ namespace WarehouseApp.Controllers
         }
 
 
-        // ======================================================
+
         // OUTGOING REPORT
-        // ======================================================
         public async Task<IActionResult> OutgoingReport(
             string? from,
             string? to,
@@ -216,9 +211,8 @@ namespace WarehouseApp.Controllers
             return View(list);
         }
 
-        // ======================================================
+
         // HELPERS
-        // ======================================================
         private string BuildPeriodText(DateTime? from, DateTime? to)
         {
             if (from.HasValue && to.HasValue)
@@ -235,7 +229,7 @@ namespace WarehouseApp.Controllers
             using var wb = new XLWorkbook();
             var ws = wb.AddWorksheet("Stock");
 
-            // ===== HEADER =====
+            // HEADER
             ws.Cell(1, 1).Value = $"Stock am {date:dd.MM.yyyy}";
             ws.Cell(1, 1).Style.Font.Bold = true;
 
@@ -247,7 +241,7 @@ namespace WarehouseApp.Controllers
             ws.Range("A3:D3").Style.Font.Bold = true;
             ws.Range("A3:D3").Style.Border.BottomBorder = XLBorderStyleValues.Thin;
 
-            // ===== DATA =====
+            // DATA
             int row = 4;
             foreach (var p in data)
             {
@@ -256,7 +250,7 @@ namespace WarehouseApp.Controllers
                 ws.Cell(row, 3).Value = p.Quantity;
                 ws.Cell(row, 4).Value = p.MinimumStock;
 
-                // ⚠️ highlight if below minimum
+                //  highlight if below minimum
                 if (p.MinimumStock > 0 && p.Quantity < p.MinimumStock)
                 {
                     ws.Range(row, 1, row, 4)

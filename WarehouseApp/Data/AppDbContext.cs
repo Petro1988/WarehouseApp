@@ -17,24 +17,24 @@ namespace WarehouseApp.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // 🔑 ProductId auto increment
+            // ProductId auto increment
             modelBuilder.Entity<Product>()
                 .Property(p => p.ProductId)
                 .ValueGeneratedOnAdd();
 
-            // 🔑 CategoryId auto increment
+            // CategoryId auto increment
             modelBuilder.Entity<Category>()
                 .Property(c => c.CategoryId)
                 .ValueGeneratedOnAdd();
 
-            // ❌ НЕ МОЖНА видаляти категорію, якщо є продукти
+            // You cannot delete a category if there are products
             modelBuilder.Entity<Product>()
                 .HasOne(p => p.Category)
                 .WithMany()
                 .HasForeignKey(p => p.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ❌ НЕ МОЖНА видаляти продукт, якщо є транзакції
+            // You cannot delete a product if there are transactions
             modelBuilder.Entity<Transaction>()
                 .HasOne(t => t.Product)
                 .WithMany()

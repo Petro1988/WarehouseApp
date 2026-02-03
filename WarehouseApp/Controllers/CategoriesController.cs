@@ -80,7 +80,7 @@ namespace WarehouseApp.Controllers
         }
 
         // GET: /Categories/Delete/5
-        [Authorize(Roles = "Admin")] // 🧩 лише адміністратор
+        [Authorize(Roles = "Admin")] // only Admin
         public async Task<IActionResult> Delete(int id)
         {
             var category = await _context.Categories.FindAsync(id);

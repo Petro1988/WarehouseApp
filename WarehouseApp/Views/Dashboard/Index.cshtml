@@ -15,7 +15,7 @@
         </div>
     }
 
-    <!-- 🔹 HEADER -->
+    <!-- HEADER -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-0">
             <i class="bi bi-speedometer2"></i> SVG-IT Lagerübersicht
@@ -29,7 +29,7 @@
         </div>
     }
 
-    <!-- 🔍 FILTER CARD -->
+    <!-- FILTER CARD -->
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-primary text-white">
             <i class="bi bi-funnel"></i> Filter
@@ -91,7 +91,7 @@
         </div>
     </div>
 
-    <!-- 📊 CHARTS -->
+    <!-- CHARTS -->
     <div class="row">
         <div class="col-lg-8 mb-4">
             <div class="card shadow-sm h-100">
@@ -116,7 +116,7 @@
         </div>
     </div>
 
-    <!-- 📋 TABLE -->
+    <!-- TABLE -->
     <div class="card shadow-sm">
         <div class="card-header bg-dark text-white">
             <i class="bi bi-list-ul"></i> Buchungen
@@ -139,7 +139,7 @@
         async function loadCharts() {
             const params = new URLSearchParams(new FormData(document.getElementById("filterForm")));
 
-            // 📈 Transactions Over Time
+            // Transactions Over Time
             const timeRes = await fetch('/Dashboard/GetChartData?' + params);
             const timeData = await timeRes.json();
 
@@ -172,7 +172,7 @@
                 }
             });
 
-            // 🍩 Activity by Category
+            // Activity by Category
             const catRes = await fetch('/Dashboard/GetCategoryChartData?' + params);
             const catData = await catRes.json();
 
@@ -193,15 +193,15 @@
             });
         }
 
-        // 🔄 initial load
+        // initial load
         document.addEventListener('DOMContentLoaded', loadCharts);
 
-        // 🔍 reload on filter submit
+        // reload on filter submit
         document.getElementById("filterForm").addEventListener("submit", function () {
             setTimeout(loadCharts, 100);
         });
 
-        // 🔁 reset
+        // reset
         document.getElementById("resetBtn").addEventListener("click", function () {
             window.location = '/Dashboard';
         });

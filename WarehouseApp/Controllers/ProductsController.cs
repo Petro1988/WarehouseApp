@@ -27,7 +27,7 @@ namespace WarehouseApp.Controllers
             int pageNumber = 1,
             int? pageSize = null)
         {
-            // 🍪 Якщо не передано pageSize — беремо з cookie
+            // If pageSize is not provided, we take it from the cookie
             if (pageSize == null)
             {
                 if (Request.Cookies.TryGetValue("PageSize", out string? savedSize))
@@ -37,10 +37,10 @@ namespace WarehouseApp.Controllers
                 }
             }
 
-            // 🔢 Якщо й cookie немає — дефолт 10
+            // If there's no cookie — default 10
             pageSize ??= 10;
 
-            // 🍪 Зберігаємо вибір у cookie (на 30 днів)
+            // We save your choice in a cookie (for 30 days)
             Response.Cookies.Append("PageSize", pageSize.ToString(), new CookieOptions
             {
                 Expires = DateTimeOffset.UtcNow.AddDays(30)
@@ -48,15 +48,15 @@ namespace WarehouseApp.Controllers
 
             var productsQuery = _context.Products.Include(p => p.Category).AsQueryable();
 
-            // 🔍 Пошук
+            // Search
             if (!string.IsNullOrEmpty(search))
                 productsQuery = productsQuery.Where(p => p.Name.Contains(search));
 
-            // 🏷️ Фільтр
+            // Filter
             if (categoryId.HasValue)
                 productsQuery = productsQuery.Where(p => p.CategoryId == categoryId.Value);
 
-            // 📊 Сортування
+            // Sorting
             if (sortOrder == "low")
             {
                 productsQuery = productsQuery.OrderBy(p => p.Quantity - p.MinimumStock);
@@ -72,7 +72,7 @@ namespace WarehouseApp.Controllers
             ViewBag.PageSize = pageSize;
             ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "Name");
 
-            // 📄 Пагінація
+            // Pagination
             var paginatedList = await PaginatedList<Product>.CreateAsync(productsQuery, pageNumber, pageSize.Value);
             return View(paginatedList);
         }

@@ -9,7 +9,7 @@ namespace WarehouseApp.Models
         public int ProductId { get; set; }
 
         [Required(ErrorMessage = "Please select a category.")]
-        public int CategoryId { get; set; } // nullable int для форми
+        public int CategoryId { get; set; } // nullable int for the form
 
         [Required(ErrorMessage = "Name is required.")]
         public string Name { get; set; }

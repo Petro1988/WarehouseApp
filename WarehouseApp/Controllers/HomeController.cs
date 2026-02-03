@@ -5,7 +5,7 @@ using WarehouseApp.Models;
 
 namespace WarehouseApp.Controllers
 {
-    [Authorize] // 🔐 Не дозволяє доступ неавторизованим користувачам
+    [Authorize] // Does not allow access to unauthorized users
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -17,11 +17,11 @@ namespace WarehouseApp.Controllers
 
         public IActionResult Index()
         {
-            // 🧭 Перекидає на Dashboard після логіну
+            // Redirects to the dashboard after login
             return RedirectToAction("Index", "Dashboard");
         }
 
-        [AllowAnonymous] // 👈 Privacy можна залишити відкритою
+        [AllowAnonymous] // Privacy can be left open
         public IActionResult Privacy()
         {
             return View();

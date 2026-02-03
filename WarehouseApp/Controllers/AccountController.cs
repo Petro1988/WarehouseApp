@@ -19,7 +19,7 @@ namespace WarehouseApp.Controllers
             _context = context;
         }
 
-        // ✅ GET: /Account/Login
+        // GET: /Account/Login
         [HttpGet]
         public IActionResult Login()
         {
@@ -29,7 +29,7 @@ namespace WarehouseApp.Controllers
             return View();
         }
 
-        // ✅ POST: /Account/Login
+        // POST: /Account/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string username, string password)
@@ -53,7 +53,7 @@ namespace WarehouseApp.Controllers
                 return View();
             }
 
-            // ✅ Claims — для cookie аутентифікації
+            // Claims — for cookie authentication
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Username),
@@ -70,7 +70,7 @@ namespace WarehouseApp.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        // ✅ Logout
+        // Logout
         [Authorize]
         public async Task<IActionResult> Logout()
         {
@@ -78,10 +78,7 @@ namespace WarehouseApp.Controllers
             return RedirectToAction("Login");
         }
 
-        // ❌ Register — прибираємо (адмін додає користувачів через UsersController)
-        // public IActionResult Register() => View();
-
-        // ✅ Change Password (для звичайних користувачів)
+        // Change Password (for user)
         [Authorize]
         public IActionResult ChangePassword()
         {

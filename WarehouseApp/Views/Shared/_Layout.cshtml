@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <style>
-        /* ===== BASE ===== */
+        /*  BASE */
         * {
             box-sizing: border-box;
         }
@@ -24,11 +24,11 @@
         body {
             background-color: #f8f9fa;
             display: flex;
-            overflow: hidden; /* ❗ прибираємо загальний скрол */
+            overflow: hidden; /* removing the overall scroll */
             font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         }
 
-        /* ===== SIDEBAR ===== */
+        /* SIDEBAR */
         .sidebar {
             position: fixed;
             top: 0;
@@ -39,64 +39,64 @@
             color: #fff;
             display: flex;
             flex-direction: column;
-            overflow-y: auto; /* якщо меню довге */
+            overflow-y: auto; /* if the menu is long */
             z-index: 1000;
         }
 
-            .sidebar .brand {
-                font-size: 1.3rem;
-                font-weight: 600;
-                padding: 1rem;
-                border-bottom: 1px solid rgba(255,255,255,0.1);
-                text-align: center;
-                flex-shrink: 0;
-            }
+        .sidebar .brand {
+            font-size: 1.3rem;
+            font-weight: 600;
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+            flex-shrink: 0;
+        }
 
-            .sidebar a {
-                color: #adb5bd;
-                text-decoration: none;
-                padding: 0.75rem 1rem;
-                display: flex;
-                align-items: center;
-                transition: 0.2s;
-                border-left: 4px solid transparent;
-            }
+        .sidebar a {
+            color: #adb5bd;
+            text-decoration: none;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            transition: 0.2s;
+            border-left: 4px solid transparent;
+         }
 
-                .sidebar a i {
-                    margin-right: 10px;
-                    font-size: 1.1rem;
-                }
+        .sidebar a i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
 
-                .sidebar a:hover,
-                .sidebar a.active {
-                    background-color: #343a40;
-                    color: #fff;
-                    border-left: 4px solid #0d6efd;
-                }
+        .sidebar a:hover,
+        .sidebar a.active {
+             background-color: #343a40;
+             color: #fff;
+             border-left: 4px solid #0d6efd;
+         }
 
-        /* ===== MAIN WRAPPER ===== */
+        /* MAIN WRAPPER */
         .main-content {
             height: 100vh;
             width: calc(100% - 240px);
             height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* ❗ скрол тільки всередині main */
+            overflow: hidden; /* scroll only inside main */
         }
 
-            /* sidebar є */
-            .main-content.with-sidebar {
-                margin-left: 240px;
-                width: calc(100% - 240px);
-            }
+            /* sidebar exists */
+        .main-content.with-sidebar {
+             margin-left: 240px;
+             width: calc(100% - 240px);
+        }
 
-            /* sidebar нема */
-            .main-content.no-sidebar {
-                margin-left: 0;
-                width: 100%;
-            }
+            /* sidebar is missing */
+        .main-content.no-sidebar {
+             margin-left: 0;
+             width: 100%;
+         }
 
-        /* ===== TOPBAR ===== */
+        /* TOPBAR */
         .topbar {
             background-color: #fff;
             padding: 0.75rem 1.25rem;
@@ -108,15 +108,15 @@
             z-index: 500;
         }
 
-        /* ===== CONTENT (SCROLL HERE) ===== */
+        /* CONTENT (SCROLL HERE) */
         main {
             padding: 1.5rem;
             flex-grow: 1;
-            overflow-y: auto; /* ✅ ЄДИНЕ місце зі скролом */
-            min-height: 0; /* 🔥 критично для flex */
+            overflow-y: auto; /* The only place with a scroll */
+            min-height: 0; /* critical for flex */
         }
 
-        /* ===== FOOTER ===== */
+        /* FOOTER */
         footer {
             background: #fff;
             text-align: center;
@@ -127,14 +127,14 @@
             flex-shrink: 0;
         }
 
-        /* ===== BUTTONS ===== */
+        /* BUTTONS */
         .user-btn {
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
-        /* ===== MOBILE ===== */
+        /* MOBILE */
         @@media (max-width: 768px) {
             .sidebar
 
@@ -161,7 +161,7 @@
 
     @if (User.Identity?.IsAuthenticated == true)
     {
-        <!-- 🧭 SIDEBAR -->
+        <!-- SIDEBAR -->
         <div class="sidebar">           
             <div class="brand">
                 <i class="bi bi-box-seam"></i> SVG-IT Lager
@@ -216,8 +216,7 @@
         </div>
     }
 
-    <!-- 📊 MAIN CONTENT -->
-    <!-- 📊 MAIN CONTENT -->
+    <!-- MAIN CONTENT -->
     <div class="main-content @(User.Identity?.IsAuthenticated == true ? "with-sidebar" : "no-sidebar")">
 
         <div class="topbar">

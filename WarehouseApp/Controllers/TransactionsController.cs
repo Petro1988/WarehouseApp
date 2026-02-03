@@ -47,7 +47,7 @@ namespace WarehouseApp.Controllers
                 .ThenInclude(p => p.Category)
                 .AsQueryable();
 
-            // 🔍 ФІЛЬТРИ
+            // FILTERS
             if (!string.IsNullOrWhiteSpace(type))
                 query = query.Where(t => t.TransactionType == type);
 
@@ -70,7 +70,7 @@ namespace WarehouseApp.Controllers
                 .OrderByDescending(t => t.Date)
                 .ToListAsync();
 
-            // 🔧 ФІЛЬТРИ ДЛЯ VIEW
+            // FILTERS FOR VIEW
             ViewData["ProductId"] = new SelectList(_context.Products, "ProductId", "Name", productId);
             ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "Name", categoryId);
 
@@ -79,7 +79,7 @@ namespace WarehouseApp.Controllers
             ViewBag.FromDate = fromDate;
             ViewBag.ToDate = toDate;
 
-            // 🟢 ПЕРІОД ВИБІРКИ
+            // SAMPLE PERIOD
             if (from.HasValue || to.HasValue)
             {
                 var fromText = from?.ToString("dd.MM.yyyy") ?? "–";
@@ -103,13 +103,13 @@ namespace WarehouseApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Transaction transaction)
         {
-            // 🔐 системні поля
+            // system fields
             transaction.CreatedBy = User.Identity?.Name ?? "System";
             transaction.Date = DateTime.Now;
             transaction.LastModifiedBy = null;
             transaction.LastModifiedAt = null;
 
-            // ❗ кажемо MVC не валідовувати ці поля з форми
+            //Let's say MVC shouldn't validate these fields from the form
             ModelState.Remove(nameof(transaction.CreatedBy));
             ModelState.Remove(nameof(transaction.LastModifiedBy));
             ModelState.Remove(nameof(transaction.LastModifiedAt));
@@ -133,7 +133,7 @@ namespace WarehouseApp.Controllers
                 return View(transaction);
             }
 
-            // 🔁 склад
+            // stock
             if (transaction.TransactionType == "IN")
             {
                 product.Quantity += transaction.Quantity;
@@ -181,7 +181,7 @@ namespace WarehouseApp.Controllers
             if (oldProduct == null)
                 return NotFound();
 
-            // 🔁 Відкат старої транзакції
+            // Rollback of the old transaction
             if (transaction.TransactionType == "IN")
                 oldProduct.Quantity -= transaction.Quantity;
             else
@@ -194,7 +194,7 @@ namespace WarehouseApp.Controllers
                 goto ReturnView;
             }
 
-            // 🔄 Застосування нової транзакції
+            // Applying a new transaction
             if (model.TransactionType == "IN")
             {
                 newProduct.Quantity += model.Quantity;
@@ -209,7 +209,7 @@ namespace WarehouseApp.Controllers
                 newProduct.Quantity -= model.Quantity;
             }
 
-            // 📝 Оновлення полів
+            // Field Update
             transaction.ProductId = model.ProductId;
             transaction.Quantity = model.Quantity;
             transaction.TransactionType = model.TransactionType;
@@ -283,7 +283,7 @@ namespace WarehouseApp.Controllers
             if (product == null)
                 return BadRequest();
 
-            // 🔁 ВІДКОТ СКЛАДУ
+            // Stock Rollback
             if (transaction.TransactionType == "IN")
             {
                 product.Quantity -= transaction.Quantity;

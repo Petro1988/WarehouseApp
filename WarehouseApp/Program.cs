@@ -6,7 +6,7 @@ using WarehouseApp.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔐 Cookie Auth
+// Cookie Auth
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -15,7 +15,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/Account/Login";
     });
 
-// 📦 Database
+// Database
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("WarehouseDb")));
 
@@ -33,7 +33,7 @@ var localizationOptions = new RequestLocalizationOptions
 };
 
 app.UseRequestLocalization(localizationOptions);
-// 🧩 Seed admin user
+// Seed admin user
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -51,7 +51,6 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// ✅ Правильний порядок:
 app.UseAuthentication();
 app.UseAuthorization();
 

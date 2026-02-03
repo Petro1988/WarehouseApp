@@ -7,26 +7,26 @@
 <div class="container mt-4" style="max-width: 600px;">
     <div class="card shadow-sm">
 
-        <!-- 🔹 HEADER -->
+        <!-- HEADER -->
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">
                 <i class="bi bi-pencil-square"></i> Artikel bearbeiten
             </h5>
         </div>
 
-        <!-- 🔹 BODY -->
+        <!-- BODY -->
         <div class="card-body">
             <form asp-action="Edit" method="post" autocomplete="off">
                 <input type="hidden" asp-for="ProductId" />
 
-                <!-- 🏷 Name -->
+                <!-- Name -->
                 <div class="mb-3">
                     <label asp-for="Name" class="form-label fw-semibold"></label>
                     <input asp-for="Name" class="form-control" />
                     <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
 
-                <!-- 📂 Category -->
+                <!-- Category -->
                 <div class="mb-3">
                     <label asp-for="CategoryId" class="form-label fw-semibold">
                         Kategorie
@@ -39,7 +39,7 @@
                     <span asp-validation-for="CategoryId" class="text-danger"></span>
                 </div>
 
-                <!-- 📉 Minimum stock -->
+                <!-- Minimum stock -->
                 <div class="mb-3">
                     <label asp-for="MinimumStock" class="form-label fw-semibold">
                         Mindestbestand
@@ -51,7 +51,7 @@
                     <span asp-validation-for="MinimumStock" class="text-danger"></span>
                 </div>
 
-                <!-- 📦 Quantity (readonly) -->
+                <!-- Quantity (readonly) -->
                 <div class="mb-4">
                     <label asp-for="Quantity" class="form-label fw-semibold">
                         Aktueller Bestand
@@ -61,7 +61,7 @@
                            readonly />
                 </div>
 
-                <!-- 🔘 ACTIONS -->
+                <!-- ACTIONS -->
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-save"></i> Aktualisieren

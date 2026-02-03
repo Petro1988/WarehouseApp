@@ -14,14 +14,14 @@ namespace WarehouseApp.Data
                 var admin = new User
                 {
                     Username = "admin",
-                    PasswordHash = PasswordHelper.HashPassword("admin123"), // ✅ хешуємо пароль
+                    PasswordHash = PasswordHelper.HashPassword("admin123"), // hashing the password
                     Role = "Admin"
                 };
 
                 var user = new User
                 {
                     Username = "user",
-                    PasswordHash = PasswordHelper.HashPassword("user123"), // ✅ хешуємо пароль
+                    PasswordHash = PasswordHelper.HashPassword("user123"), // hashing the password
                     Role = "User"
                 };
 

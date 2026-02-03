@@ -14,9 +14,7 @@ namespace WarehouseApp.Controllers
             _context = context;
         }
 
-        // =========================
-        // 📊 MAIN DASHBOARD
-        // =========================
+        // MAIN DASHBOARD
         public async Task<IActionResult> Index(
             string? fromDate,
             string? toDate,
@@ -28,7 +26,7 @@ namespace WarehouseApp.Controllers
                 .ThenInclude(p => p.Category)
                 .AsQueryable();
 
-            // 🔎 DATE FILTER (STABLE)
+            // DATE FILTER (STABLE)
             if (!string.IsNullOrWhiteSpace(fromDate) &&
                 DateTime.TryParse(fromDate, out var from))
             {
@@ -41,15 +39,15 @@ namespace WarehouseApp.Controllers
                 query = query.Where(t => t.Date.Date <= to.Date);
             }
 
-            // 🔎 TYPE
+            // TYPE
             if (type == "IN" || type == "OUT")
                 query = query.Where(t => t.TransactionType == type);
 
-            // 🔎 CATEGORY
+            // CATEGORY
             if (categoryId.HasValue && categoryId > 0)
                 query = query.Where(t => t.Product.CategoryId == categoryId);
 
-            // 🧠 ViewBag (BACK TO VIEW)
+            // ViewBag (BACK TO VIEW)
             ViewBag.FromDate = fromDate;
             ViewBag.ToDate = toDate;
             ViewBag.SelectedType = type;
@@ -93,9 +91,7 @@ namespace WarehouseApp.Controllers
             return View();
         }
 
-        // =========================
-        // 📈 LINE CHART
-        // =========================
+        // LINE CHART
         [HttpGet]
         public async Task<IActionResult> GetChartData(
             string? fromDate,
@@ -144,9 +140,7 @@ namespace WarehouseApp.Controllers
             });
         }
 
-        // =========================
-        // 🍩 CATEGORY CHART
-        // =========================
+        // CATEGORY CHART
         [HttpGet]
         public async Task<IActionResult> GetCategoryChartData(
             string? fromDate,
@@ -194,9 +188,7 @@ namespace WarehouseApp.Controllers
             });
         }
 
-        // =========================
-        // 📤 EXCEL EXPORT
-        // =========================
+        // EXCEL EXPORT
         [HttpGet]
         public async Task<IActionResult> ExportToExcel(
             string? fromDate,

@@ -111,7 +111,7 @@ namespace WarehouseApp.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // 🟡 GET: /Users/ResetPassword/5
+        //  GET: /Users/ResetPassword/5
         public async Task<IActionResult> ResetPassword(int id)
         {
             var user = await _context.Users.FindAsync(id);
@@ -121,7 +121,7 @@ namespace WarehouseApp.Controllers
             return View(user);
         }
 
-        // 🟢 POST: /Users/ResetPassword/5
+        //  POST: /Users/ResetPassword/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(int id, string newPassword, string confirmPassword)
@@ -142,7 +142,7 @@ namespace WarehouseApp.Controllers
                 return View(user);
             }
 
-            // ✅ Хешуємо новий пароль
+            // Hashing the new password
             user.PasswordHash = PasswordHelper.HashPassword(newPassword);
             await _context.SaveChangesAsync();
 

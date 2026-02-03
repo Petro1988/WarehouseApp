@@ -7,21 +7,21 @@
 <div class="container mt-4" style="max-width: 600px;">
     <div class="card shadow-sm">
 
-        <!-- 🔴 HEADER -->
+        <!--  HEADER -->
         <div class="card-header bg-danger text-white">
             <h5 class="mb-0">
                 <i class="bi bi-trash"></i> Artikel löschen
             </h5>
         </div>
 
-        <!-- ⚠️ BODY -->
+        <!-- BODY -->
         <div class="card-body">
             <div class="alert alert-warning">
                 <i class="bi bi-exclamation-triangle"></i>
                 Möchten Sie diesen Artikel wirklich dauerhaft löschen?
             </div>
 
-            <!-- 🧾 DETAILS -->
+            <!-- DETAILS -->
             <dl class="row mb-4">
                 <dt class="col-sm-4">Name</dt>
                 <dd class="col-sm-8">@Model.Name</dd>
@@ -36,7 +36,7 @@
                 <dd class="col-sm-8">@Model.MinimumStock</dd>
             </dl>
 
-            <!-- 🔘 ACTIONS -->
+            <!-- ACTIONS -->
             <form asp-action="Delete" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="ProductId" />
