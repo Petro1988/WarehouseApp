@@ -138,5 +138,35 @@
                 }
             </tbody>
         </table>
+        @if (ViewBag.TotalPages > 1)
+        {
+            <nav>
+                <ul class="pagination justify-content-center mt-3">
+                    <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link"
+                           asp-action="IncomingReport"
+                           asp-route-page="@(ViewBag.CurrentPage - 1)"
+                           asp-route-from="@ViewBag.From"
+                           asp-route-to="@ViewBag.To"
+                           asp-route-categoryId="@ViewBag.SelectedCategory"
+                           asp-route-productId="@ViewBag.SelectedProduct"
+                           asp-route-search="@ViewBag.Search">
+                            Previous
+                        </a>
+                    </li>
+
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                            <a class="page-link" href="?page=@i&from=@ViewBag.From&to=@ViewBag.To&categoryId=@ViewBag.SelectedCategory&productId=@ViewBag.SelectedProduct&search=@ViewBag.Search">@i</a>
+                        </li>
+                    }
+
+                    <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                        <a class="page-link" href="?page=@(ViewBag.CurrentPage + 1)">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
     </div>
 </div>

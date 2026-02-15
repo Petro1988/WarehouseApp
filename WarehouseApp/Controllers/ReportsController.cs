@@ -102,7 +102,9 @@ namespace WarehouseApp.Controllers
              int? categoryId,
              int? productId,
              string? search,
-             bool export = false)
+             bool export = false,
+             int page = 1,
+             int pageSize = 1000)
         {
             var query = _context.Transactions
                 .Include(t => t.Product)
@@ -132,9 +134,16 @@ namespace WarehouseApp.Controllers
                     t.Comment.Contains(search));
             }
 
+            var totalCount = await query.CountAsync();
+
             var list = await query
                 .OrderByDescending(t => t.Date)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
             // BACK TO VIEW
             ViewBag.From = from;
@@ -163,7 +172,9 @@ namespace WarehouseApp.Controllers
             int? categoryId,
             int? productId,
             string? search,
-            bool export = false)
+            bool export = false,
+            int page = 1,
+            int pageSize = 1000)
         {
             var query = _context.Transactions
                 .Include(t => t.Product)
@@ -193,7 +204,16 @@ namespace WarehouseApp.Controllers
                     t.Comment.Contains(search));
             }
 
-            var list = await query.OrderByDescending(t => t.Date).ToListAsync();
+            var totalCount = await query.CountAsync();
+
+            var list = await query
+                .OrderByDescending(t => t.Date)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
             ViewBag.From = from;
             ViewBag.To = to;

@@ -3,6 +3,10 @@
 @{
     ViewData["Title"] = "Buchungen";
     var query = Context.Request.Query;
+
+    var routeValues = query
+        .Where(q => q.Key != "page")
+        .ToDictionary(q => q.Key, q => q.Value.ToString());
 }
 
 <div class="container mt-4">
@@ -94,6 +98,15 @@
         </div>
     }
 
+    @if (User.IsInRole("Admin"))
+    {
+        <div class="d-flex gap-2">
+            <a asp-action="OpeningBalances" class="btn btn-outline-primary">
+                <i class="bi bi-upload"></i> Anfangsbestände importieren
+            </a>
+        </div>
+    }
+
     <!-- TABLE -->
     <div class="card shadow-sm">
         <div class="card-body p-0">
@@ -166,6 +179,109 @@
                     }
                 </tbody>
             </table>
+
+            @{
+                int current = ViewBag.CurrentPage;
+                int total = ViewBag.TotalPages;
+
+                int window = 2; // скільки сторінок навколо
+                int start = Math.Max(1, current - window);
+                int end = Math.Min(total, current + window);
+            }
+
+            @if (total > 1)
+            {
+                <nav class="mt-3">
+                    <ul class="pagination justify-content-center">
+
+                        <!-- ← PREV -->
+                        @if (current > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link"
+                                   asp-action="Index"
+                                   asp-route-page="@(current - 1)"
+                                   asp-route-type="@ViewBag.Type"
+                                   asp-route-productId="@Context.Request.Query["productId"]"
+                                   asp-route-categoryId="@Context.Request.Query["categoryId"]"
+                                   asp-route-search="@ViewBag.Search"
+                                   asp-route-fromDate="@ViewBag.FromDate"
+                                   asp-route-toDate="@ViewBag.ToDate">
+                                    ←
+                                </a>
+                            </li>
+                        }
+
+                        <!-- FIRST -->
+                        @if (start > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" asp-action="Index" asp-route-page="1">1</a>
+                            </li>
+
+                            @if (start > 2)
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">…</span>
+                                </li>
+                            }
+                        }
+
+                        <!-- WINDOW -->
+                        @for (int i = start; i <= end; i++)
+                        {
+                            <li class="page-item @(i == current ? "active" : "")">
+                                <a class="page-link"
+                                   asp-action="Index"
+                                   asp-route-page="@i"
+                                   asp-route-type="@ViewBag.Type"
+                                   asp-route-productId="@Context.Request.Query["productId"]"
+                                   asp-route-categoryId="@Context.Request.Query["categoryId"]"
+                                   asp-route-search="@ViewBag.Search"
+                                   asp-route-fromDate="@ViewBag.FromDate"
+                                   asp-route-toDate="@ViewBag.ToDate">
+                                    @i
+                                </a>
+                            </li>
+                        }
+
+                        <!-- LAST -->
+                        @if (end < total)
+                        {
+                            @if (end < total - 1)
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">…</span>
+                                </li>
+                            }
+
+                            <li class="page-item">
+                                <a class="page-link" asp-action="Index" asp-route-page="@total">@total</a>
+                            </li>
+                        }
+
+                        <!-- NEXT → -->
+                        @if (current < total)
+                        {
+                            <li class="page-item">
+                                <a class="page-link"
+                                   asp-action="Index"
+                                   asp-route-page="@(current + 1)"
+                                   asp-route-type="@ViewBag.Type"
+                                   asp-route-productId="@Context.Request.Query["productId"]"
+                                   asp-route-categoryId="@Context.Request.Query["categoryId"]"
+                                   asp-route-search="@ViewBag.Search"
+                                   asp-route-fromDate="@ViewBag.FromDate"
+                                   asp-route-toDate="@ViewBag.ToDate">
+                                    →
+                                </a>
+                            </li>
+                        }
+
+                    </ul>
+                </nav>
+            }
         </div>
     </div>
 </div>
+

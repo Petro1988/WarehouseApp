@@ -56,6 +56,7 @@ namespace WarehouseApp.Controllers
             ViewBag.Categories = await _context.Categories.ToListAsync();
             ViewBag.Transactions = await query
                 .OrderByDescending(t => t.Date)
+                .Take(50)
                 .ToListAsync();
 
             DateTime? fromParsed = null;

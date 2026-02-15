@@ -45,12 +45,7 @@
                            class="form-control"
                            placeholder="Menge eingeben" />
                     <span asp-validation-for="Quantity" class="text-danger"></span>
-                    @if (!ViewData.ModelState.IsValid)
-                    {
-                        <div class="alert alert-danger">
-                            @Html.ValidationSummary(false)
-                        </div>
-                    }
+                    
 
                 </div>
 
@@ -59,7 +54,14 @@
                     <label asp-for="Comment" class="form-label">Bemerkung</label>
                     <input asp-for="Comment"
                            class="form-control"
-                           placeholder="Optionale Bemerkung" />
+                           placeholder="Bemerkung" />
+                    <span asp-validation-for="Comment" class="text-danger"></span>
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            @Html.ValidationSummary(false)
+                        </div>
+                    }
                 </div>
 
                 <!-- ACTIONS -->

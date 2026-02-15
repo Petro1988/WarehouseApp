@@ -10,22 +10,21 @@ namespace WarehouseApp.Models
         public int? ProductId { get; set; }
 
         [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be greater than 0")]
+        [Range(1, int.MaxValue, ErrorMessage = "Menge muss größer als 0 sein.")]
         public int Quantity { get; set; }
 
         [Required]
-        [RegularExpression("IN|OUT", ErrorMessage = "Transaction type must be IN or OUT")]
+        [RegularExpression("IN|OUT", ErrorMessage = "Bewegungstyp ist erforderlich.")]
         public string TransactionType { get; set; } = "IN";
 
-        public DateTime Date { get; set; } = DateTime.Now;
+        public DateTime Date { get; set; }
 
+        [Required(ErrorMessage = "Kommentar ist erforderlich.")]
+        [StringLength(500, ErrorMessage = "Kommentar darf maximal 500 Zeichen haben.")]
         public string? Comment { get; set; }
 
-        [Required]
-        [MaxLength(100)]
         public string CreatedBy { get; set; } = null!;
 
-        [MaxLength(100)]
         public string? LastModifiedBy { get; set; }
 
         public DateTime? LastModifiedAt { get; set; }

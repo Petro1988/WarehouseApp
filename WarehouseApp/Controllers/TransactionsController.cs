@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -20,27 +21,27 @@ namespace WarehouseApp.Controllers
 
         // GET: /Transactions
         public async Task<IActionResult> Index(
-            string? type,
-            int? productId,
-            int? categoryId,
-            string? search,
-            string? fromDate,
-            string? toDate)
+    string? type,
+    int? productId,
+    int? categoryId,
+    string? search,
+    string? fromDate,
+    string? toDate,
+    int page = 1)
         {
+            if (page < 1) page = 1;
+            const int pageSize = 100;
+
             DateTime? from = null;
             DateTime? to = null;
 
             if (!string.IsNullOrWhiteSpace(fromDate))
-            {
                 if (DateTime.TryParse(fromDate, out var f))
                     from = f.Date;
-            }
 
             if (!string.IsNullOrWhiteSpace(toDate))
-            {
                 if (DateTime.TryParse(toDate, out var t))
                     to = t.Date.AddDays(1).AddTicks(-1);
-            }
 
             var query = _context.Transactions
                 .Include(t => t.Product)
@@ -55,7 +56,7 @@ namespace WarehouseApp.Controllers
                 query = query.Where(t => t.ProductId == productId);
 
             if (categoryId.HasValue)
-                query = query.Where(t => t.Product.CategoryId == categoryId);
+                query = query.Where(t => t.Product != null && t.Product.CategoryId == categoryId);
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(t => t.Comment != null && t.Comment.Contains(search));
@@ -66,11 +67,19 @@ namespace WarehouseApp.Controllers
             if (to.HasValue)
                 query = query.Where(t => t.Date <= to.Value);
 
+            var totalItems = await query.CountAsync();
+
+            query = query.OrderByDescending(t => t.Date);
+
             var data = await query
-                .OrderByDescending(t => t.Date)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            // FILTERS FOR VIEW
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            // filters back to view
             ViewData["ProductId"] = new SelectList(_context.Products, "ProductId", "Name", productId);
             ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "Name", categoryId);
 
@@ -78,14 +87,6 @@ namespace WarehouseApp.Controllers
             ViewBag.Search = search;
             ViewBag.FromDate = fromDate;
             ViewBag.ToDate = toDate;
-
-            // SAMPLE PERIOD
-            if (from.HasValue || to.HasValue)
-            {
-                var fromText = from?.ToString("dd.MM.yyyy") ?? "–";
-                var toText = to?.ToString("dd.MM.yyyy") ?? "–";
-                ViewBag.Period = $"Zeitraum: {fromText} – {toText}";
-            }
 
             return View(data);
         }
@@ -300,6 +301,251 @@ namespace WarehouseApp.Controllers
 
             TempData["Success"] = "Buchung wurde gelöscht.";
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ImportTransactions(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("File not selected");
+
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+
+            using var wb = new XLWorkbook(stream);
+            var ws = wb.Worksheet(1);
+
+            int row = 2;
+
+            while (!ws.Cell(row, 1).IsEmpty())
+            {
+                var dateCell = ws.Cell(row, 1);
+                DateTime date;
+
+                // 1️⃣ спочатку пробуємо як Excel date
+                if (dateCell.TryGetValue<DateTime>(out date))
+                {
+                    // OK
+                }
+                else
+                {
+                    var dateText = dateCell.GetString();
+
+                    // 2️⃣ пробуємо німецький формат
+                    if (!DateTime.TryParse(
+                            dateText,
+                            new CultureInfo("de-DE"),
+                            DateTimeStyles.None,
+                            out date))
+                    {
+                        // ❗ якщо не вдалося — пропускаємо рядок
+                        row++;
+                        continue;
+                    }
+                }
+                var productName = ws.Cell(row, 2).GetString().Trim();
+                var categoryName = ws.Cell(row, 3).GetString().Trim();
+                var typeRaw = ws.Cell(row, 4).GetString().Trim().ToUpper();
+
+                string type;
+
+                if (typeRaw.StartsWith("IN") || typeRaw.Contains("EING"))
+                    type = "IN";
+                else if (typeRaw.StartsWith("OUT") || typeRaw.Contains("AUS"))
+                    type = "OUT";
+                else
+                {
+                    // невідомий тип — пропускаємо рядок
+                    row++;
+                    continue;
+                }
+                var qty = ws.Cell(row, 5).GetValue<int>();
+                var comment = ws.Cell(row, 6).GetString();
+
+                // 🔹 category
+                var category = await _context.Categories
+                    .FirstOrDefaultAsync(c => c.Name == categoryName);
+
+                if (category == null)
+                {
+                    category = new Category { Name = categoryName };
+                    _context.Categories.Add(category);
+                    await _context.SaveChangesAsync();
+                }
+
+                // 🔹 product
+                var product = await _context.Products
+                    .FirstOrDefaultAsync(p => p.Name == productName);
+
+                if (product == null)
+                {
+                    product = new Product
+                    {
+                        Name = productName,
+                        CategoryId = category.CategoryId,
+                        MinimumStock = 0
+                    };
+
+                    _context.Products.Add(product);
+                    await _context.SaveChangesAsync();
+                }
+
+                // 🔹 transaction
+                var transaction = new Transaction
+                {
+                    ProductId = product.ProductId,
+                    Date = date,
+                    Quantity = qty,
+                    TransactionType = type,
+                    Comment = comment,
+                    CreatedBy = User.Identity!.Name ?? "Import"
+                };
+
+                // update stock
+                if (type == "IN")
+                    product.Quantity += qty;
+                else if (type == "OUT")
+                    product.Quantity -= qty;
+
+                _context.Products.Update(product);
+                _context.Transactions.Add(transaction);
+
+                row++;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Import completed";
+            return RedirectToAction("Index");
+        }
+
+        [HttpGet]
+        public IActionResult OpeningBalances()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> OpeningBalances(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                ViewBag.Message = "Datei nicht ausgewählt";
+                return View();
+            }
+
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+
+            using var wb = new XLWorkbook(stream);
+            var ws = wb.Worksheet(1);
+
+            int row = 2;
+
+            while (!ws.Cell(row, 1).IsEmpty())
+            {
+                var dateCell = ws.Cell(row, 1);
+                DateTime date;
+
+                // 1️⃣ спочатку пробуємо як Excel date
+                if (dateCell.TryGetValue<DateTime>(out date))
+                {
+                    // OK
+                }
+                else
+                {
+                    var dateText = dateCell.GetString();
+
+                    // 2️⃣ пробуємо німецький формат
+                    if (!DateTime.TryParse(
+                            dateText,
+                            new CultureInfo("de-DE"),
+                            DateTimeStyles.None,
+                            out date))
+                    {
+                        // ❗ якщо не вдалося — пропускаємо рядок
+                        row++;
+                        continue;
+                    }
+                }
+                var productName = ws.Cell(row, 2).GetString().Trim();
+                var categoryName = ws.Cell(row, 3).GetString().Trim();
+                var typeRaw = ws.Cell(row, 4).GetString().Trim().ToUpper();
+
+                string type;
+
+                if (typeRaw.StartsWith("IN") || typeRaw.Contains("EING"))
+                    type = "IN";
+                else if (typeRaw.StartsWith("OUT") || typeRaw.Contains("AUS"))
+                    type = "OUT";
+                else
+                {
+                    // невідомий тип — пропускаємо рядок
+                    row++;
+                    continue;
+                }
+                var qty = ws.Cell(row, 5).GetValue<int>();
+                var comment = ws.Cell(row, 6).GetString();
+
+                var category = await _context.Categories
+                    .FirstOrDefaultAsync(c => c.Name == categoryName);
+
+                if (category == null)
+                {
+                    category = new Category { Name = categoryName };
+                    _context.Categories.Add(category);
+                    await _context.SaveChangesAsync();
+                }
+
+                var product = await _context.Products
+                    .FirstOrDefaultAsync(p => p.Name == productName);
+
+                if (product == null)
+                {
+                    product = new Product
+                    {
+                        Name = productName,
+                        CategoryId = category.CategoryId,
+                        Quantity = 0,
+                        MinimumStock = 0
+                    };
+
+                    _context.Products.Add(product);
+                    await _context.SaveChangesAsync();
+                }
+
+                // update stock according to type
+                if (type == "IN")
+                {
+                    product.Quantity += qty;
+                }
+                else if (type == "OUT")
+                {
+                    product.Quantity -= qty;
+                }
+
+                var transaction = new Transaction
+                {
+                    ProductId = product.ProductId,
+                    Date = date,
+                    Quantity = qty,
+                    TransactionType = type, // ⭐ важливо!
+                    Comment = comment,
+                    CreatedBy = User.Identity?.Name ?? "Import"
+                };
+
+                _context.Transactions.Add(transaction);
+                _context.Products.Update(product);
+
+                row++;
+            }
+
+            await _context.SaveChangesAsync();
+
+            ViewBag.Message = "Import erfolgreich abgeschlossen";
+            return View();
         }
     }
 }
