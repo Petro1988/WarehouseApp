@@ -15,7 +15,7 @@ namespace WarehouseApp.Models
 
         [Required]
         [RegularExpression("IN|OUT", ErrorMessage = "Bewegungstyp ist erforderlich.")]
-        public string TransactionType { get; set; } = "IN";
+        public string TransactionType { get; set; } = "OUT";
 
         public DateTime Date { get; set; }
 

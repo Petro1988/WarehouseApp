@@ -95,7 +95,7 @@ namespace WarehouseApp.Controllers
         // GET: /Transactions/Create
         public IActionResult Create()
         {
-            ViewData["ProductId"] = new SelectList(_context.Products, "ProductId", "Name");
+            LoadProductsDropdown();
             return View();
         }
 
@@ -123,6 +123,7 @@ namespace WarehouseApp.Controllers
                     "Name",
                     transaction.ProductId
                 );
+                LoadProductsDropdown(transaction.ProductId);
                 return View(transaction);
             }
 
@@ -131,6 +132,7 @@ namespace WarehouseApp.Controllers
             {
                 ModelState.AddModelError("", "Artikel nicht gefunden.");
                 ViewData["ProductId"] = new SelectList(_context.Products, "ProductId", "Name");
+                LoadProductsDropdown(transaction.ProductId);
                 return View(transaction);
             }
 
@@ -152,6 +154,7 @@ namespace WarehouseApp.Controllers
                         "Name",
                         transaction.ProductId
                     );
+                    LoadProductsDropdown(transaction.ProductId);
                     return View(transaction);
                 }
                 product.Quantity -= transaction.Quantity;
@@ -547,5 +550,58 @@ namespace WarehouseApp.Controllers
             ViewBag.Message = "Import erfolgreich abgeschlossen";
             return View();
         }
+
+        private void LoadProductsDropdown(int? selectedId = null)
+        {
+            var products = _context.Products
+                .Include(p => p.Category)
+                .AsEnumerable()
+                .OrderBy(p => p.Category?.Name)
+                .ThenBy(p => p.Name)
+                .ToList();
+
+            var groups = products
+                .Select(p => p.Category?.Name ?? "Ohne Kategorie")
+                .Distinct()
+                .ToDictionary(
+                    name => name,
+                    name => new SelectListGroup { Name = name }
+                );
+
+            var items = new List<SelectListItem>();
+
+            foreach (var product in products)
+            {
+                var categoryName = product.Category?.Name ?? "Ohne Kategorie";
+
+                // 🔥 КЛАС ЗАЛИШКУ
+                string stockClass =
+                    product.Quantity <= 0 ? "stock-critical" :
+                    product.Quantity <= product.MinimumStock ? "stock-low" :
+                    "stock-ok";
+
+                items.Add(new SelectListItem
+                {
+                    Value = product.ProductId.ToString(),
+                    Text = $"{product.Name} (Bestand: {product.Quantity})",
+                    Selected = selectedId == product.ProductId,
+                    Group = groups[categoryName],
+
+                    // 🔥 ВАЖЛИВО — передаємо через data attribute
+                    Disabled = false
+                });
+            }
+
+            ViewBag.ProductId = items;
+
+            // 🔥 ОКРЕМО передаємо словник класів (це надійно)
+            ViewBag.ProductStockClasses = products.ToDictionary(
+                p => p.ProductId.ToString(),
+                p => p.Quantity <= 0 ? "stock-critical" :
+                     p.Quantity <= p.MinimumStock ? "stock-low" :
+                     "stock-ok"
+            );
+        }
+
     }
 }
